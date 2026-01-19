@@ -1,0 +1,11 @@
+{
+    "agents": [
+        "opencode"
+    ],
+    "editors": [
+        "opencode",
+        "phpstorm"
+    ],
+    "guidelines": [],
+    "herd_mcp": true
+}
