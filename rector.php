@@ -20,6 +20,7 @@ return RectorConfig::configure()
         __DIR__.'/bootstrap/cache',
     ])
     ->withPhpSets(php85: true)
+    ->withImportNames(importDocBlockNames: true, removeUnusedImports: true)
     ->withTypeCoverageLevel(5)
     ->withSets([
         LaravelSetList::LARAVEL_120,
