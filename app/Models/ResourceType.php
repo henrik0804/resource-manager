@@ -30,7 +30,7 @@ class ResourceType extends Model
     ];
 
     /**
-     * @return HasMany<resource, $this>
+     * @return HasMany<\App\Models\Resource, $this>
      */
     public function resources(): HasMany
     {

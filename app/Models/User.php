@@ -79,7 +79,7 @@ class User extends Authenticatable
     }
 
     /**
-     * @return HasOne<resource, $this>
+     * @return HasOne<\App\Models\Resource, $this>
      */
     public function resource(): HasOne
     {

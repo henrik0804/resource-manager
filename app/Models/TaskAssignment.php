@@ -59,7 +59,7 @@ class TaskAssignment extends Model
     }
 
     /**
-     * @return BelongsTo<resource, $this>
+     * @return BelongsTo<\App\Models\Resource, $this>
      */
     public function resource(): BelongsTo
     {
