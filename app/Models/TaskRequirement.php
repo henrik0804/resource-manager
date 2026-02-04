@@ -5,22 +5,23 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\QualificationLevel;
+use Carbon\CarbonImmutable;
+use Database\Factories\TaskRequirementFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property-read int $id
  * @property-read int $task_id
  * @property-read int $qualification_id
  * @property-read QualificationLevel|null $required_level
- * @property-read Carbon|null $created_at
- * @property-read Carbon|null $updated_at
+ * @property-read CarbonImmutable|null $created_at
+ * @property-read CarbonImmutable|null $updated_at
  */
 class TaskRequirement extends Model
 {
-    /** @use HasFactory<\Database\Factories\TaskRequirementFactory> */
+    /** @use HasFactory<TaskRequirementFactory> */
     use HasFactory;
 
     /**

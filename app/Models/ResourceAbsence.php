@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Resource as ResourceModel;
+use Carbon\CarbonImmutable;
+use Database\Factories\ResourceAbsenceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property-read int $id
  * @property-read int $resource_id
- * @property-read Carbon $starts_at
- * @property-read Carbon $ends_at
+ * @property-read CarbonImmutable $starts_at
+ * @property-read CarbonImmutable $ends_at
  * @property-read string|null $recurrence_rule
- * @property-read Carbon|null $created_at
- * @property-read Carbon|null $updated_at
+ * @property-read CarbonImmutable|null $created_at
+ * @property-read CarbonImmutable|null $updated_at
  */
 class ResourceAbsence extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResourceAbsenceFactory> */
+    /** @use HasFactory<ResourceAbsenceFactory> */
     use HasFactory;
 
     /**
@@ -45,7 +47,7 @@ class ResourceAbsence extends Model
     }
 
     /**
-     * @return BelongsTo<\App\Models\Resource, $this>
+     * @return BelongsTo<ResourceModel, $this>
      */
     public function resource(): BelongsTo
     {

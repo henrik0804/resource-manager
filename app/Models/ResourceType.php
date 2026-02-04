@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Resource as ResourceModel;
+use Carbon\CarbonImmutable;
+use Database\Factories\ResourceTypeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property-read int $id
  * @property-read string $name
  * @property-read string|null $description
- * @property-read Carbon|null $created_at
- * @property-read Carbon|null $updated_at
+ * @property-read CarbonImmutable|null $created_at
+ * @property-read CarbonImmutable|null $updated_at
  */
 class ResourceType extends Model
 {
-    /** @use HasFactory<\Database\Factories\ResourceTypeFactory> */
+    /** @use HasFactory<ResourceTypeFactory> */
     use HasFactory;
 
     /**
@@ -30,7 +32,7 @@ class ResourceType extends Model
     ];
 
     /**
-     * @return HasMany<\App\Models\Resource, $this>
+     * @return HasMany<ResourceModel, $this>
      */
     public function resources(): HasMany
     {
