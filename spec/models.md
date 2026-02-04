@@ -6,8 +6,7 @@ This document summarizes conceptual models derived from `spec/project.md`. Defau
 
 - name
 - email
-- role_id (or via `user_role` pivot)
-- resource_id (optional link when a user represents a resource)
+- role_id
 
 ## Role
 
@@ -20,7 +19,7 @@ This document summarizes conceptual models derived from `spec/project.md`. Defau
 - resource_type_id
 - capacity_value (optional)
 - capacity_unit (optional)
-- user_id (optional, for employee resources)
+- user_id (optional, identity link to User when a resource is also a platform user)
 
 ## ResourceType
 
@@ -31,6 +30,7 @@ This document summarizes conceptual models derived from `spec/project.md`. Defau
 
 - name
 - description (optional)
+- resource_type_id (optional)
 
 ## ResourceQualification (pivot)
 
@@ -65,39 +65,9 @@ This document summarizes conceptual models derived from `spec/project.md`. Defau
 - assignment_source (manual/auto)
 - assignee_status (optional)
 
-## ResourceAvailability
+## ResourceAbsence
 
 - resource_id
 - starts_at
 - ends_at
-- availability_type (available/unavailable)
 - recurrence_rule (optional)
-
-## Optional or Derived Persistence
-
-Persist only if conflict history and suggestions must be stored instead of computed on demand.
-
-### SchedulingConflict
-
-- task_id
-- resource_id
-- conflict_type
-- starts_at
-- ends_at
-
-### SchedulingSuggestion
-
-- task_id
-- resource_id (optional)
-- suggested_starts_at
-- suggested_ends_at
-- reason
-- score (optional)
-
-## Tradeoffs
-
-- Roles: single `role_id` is simple but limits users to one role; a `user_role` pivot supports multi-role access at the cost of more joins.
-- Resource linkage: mapping employees via `resource.user_id` unifies planning but couples resources to accounts; keeping them separate avoids that coupling.
-- Status tracking: `task.status` is simpler; `task_assignment.assignee_status` supports multi-resource tasks and per-person updates.
-- Availability modeling: explicit time blocks are easy to query; recurrence rules or external calendars are more flexible but add complexity.
-- Qualifications: normalized `qualification` tables improve matching/validation; free-form tags or JSON are faster to change but harder to query.
