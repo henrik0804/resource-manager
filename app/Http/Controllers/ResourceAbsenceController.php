@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ResourceAbsenceController extends Controller
+final class ResourceAbsenceController
 {
     public function index(Request $request): Response
     {
@@ -35,35 +35,33 @@ class ResourceAbsenceController extends Controller
         ]);
     }
 
-    public function show(ResourceAbsence $resourceAbsence): RedirectResponse
-    {
-        return $this->backSuccess('Resource absence loaded.');
-    }
-
     public function store(StoreResourceAbsenceRequest $request, StoreResourceAbsenceAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($request->validated()),
-            'Resource absence created.',
-            'Unable to create resource absence.'
-        );
+        $action->handle($request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Resource absence created.',
+        ]);
     }
 
     public function update(UpdateResourceAbsenceRequest $request, ResourceAbsence $resourceAbsence, UpdateResourceAbsenceAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($resourceAbsence, $request->validated()),
-            'Resource absence updated.',
-            'Unable to update resource absence.'
-        );
+        $action->handle($resourceAbsence, $request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Resource absence updated.',
+        ]);
     }
 
     public function destroy(DestroyRequest $request, ResourceAbsence $resourceAbsence, DeleteResourceAbsenceAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($resourceAbsence),
-            'Resource absence deleted.',
-            'Unable to delete resource absence.'
-        );
+        $action->handle($resourceAbsence);
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Resource absence deleted.',
+        ]);
     }
 }

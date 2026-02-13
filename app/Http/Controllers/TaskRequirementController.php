@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class TaskRequirementController extends Controller
+final class TaskRequirementController
 {
     public function index(Request $request): Response
     {
@@ -37,35 +37,33 @@ class TaskRequirementController extends Controller
         ]);
     }
 
-    public function show(TaskRequirement $taskRequirement): RedirectResponse
-    {
-        return $this->backSuccess('Task requirement loaded.');
-    }
-
     public function store(StoreTaskRequirementRequest $request, StoreTaskRequirementAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($request->validated()),
-            'Task requirement created.',
-            'Unable to create task requirement.'
-        );
+        $action->handle($request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Task requirement created.',
+        ]);
     }
 
     public function update(UpdateTaskRequirementRequest $request, TaskRequirement $taskRequirement, UpdateTaskRequirementAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($taskRequirement, $request->validated()),
-            'Task requirement updated.',
-            'Unable to update task requirement.'
-        );
+        $action->handle($taskRequirement, $request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Task requirement updated.',
+        ]);
     }
 
     public function destroy(DestroyRequest $request, TaskRequirement $taskRequirement, DeleteTaskRequirementAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($taskRequirement),
-            'Task requirement deleted.',
-            'Unable to delete task requirement.'
-        );
+        $action->handle($taskRequirement);
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Task requirement deleted.',
+        ]);
     }
 }

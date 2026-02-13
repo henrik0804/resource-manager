@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class TaskAssignmentController extends Controller
+final class TaskAssignmentController
 {
     public function index(Request $request): Response
     {
@@ -37,35 +37,33 @@ class TaskAssignmentController extends Controller
         ]);
     }
 
-    public function show(TaskAssignment $taskAssignment): RedirectResponse
-    {
-        return $this->backSuccess('Task assignment loaded.');
-    }
-
     public function store(StoreTaskAssignmentRequest $request, StoreTaskAssignmentAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($request->validated()),
-            'Task assignment created.',
-            'Unable to create task assignment.'
-        );
+        $action->handle($request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Task assignment created.',
+        ]);
     }
 
     public function update(UpdateTaskAssignmentRequest $request, TaskAssignment $taskAssignment, UpdateTaskAssignmentAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($taskAssignment, $request->validated()),
-            'Task assignment updated.',
-            'Unable to update task assignment.'
-        );
+        $action->handle($taskAssignment, $request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Task assignment updated.',
+        ]);
     }
 
     public function destroy(DestroyRequest $request, TaskAssignment $taskAssignment, DeleteTaskAssignmentAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($taskAssignment),
-            'Task assignment deleted.',
-            'Unable to delete task assignment.'
-        );
+        $action->handle($taskAssignment);
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Task assignment deleted.',
+        ]);
     }
 }

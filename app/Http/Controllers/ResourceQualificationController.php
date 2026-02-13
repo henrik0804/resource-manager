@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ResourceQualificationController extends Controller
+final class ResourceQualificationController
 {
     public function index(Request $request): Response
     {
@@ -37,35 +37,33 @@ class ResourceQualificationController extends Controller
         ]);
     }
 
-    public function show(ResourceQualification $resourceQualification): RedirectResponse
-    {
-        return $this->backSuccess('Resource qualification loaded.');
-    }
-
     public function store(StoreResourceQualificationRequest $request, StoreResourceQualificationAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($request->validated()),
-            'Resource qualification created.',
-            'Unable to create resource qualification.'
-        );
+        $action->handle($request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Resource qualification created.',
+        ]);
     }
 
     public function update(UpdateResourceQualificationRequest $request, ResourceQualification $resourceQualification, UpdateResourceQualificationAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($resourceQualification, $request->validated()),
-            'Resource qualification updated.',
-            'Unable to update resource qualification.'
-        );
+        $action->handle($resourceQualification, $request->validated());
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Resource qualification updated.',
+        ]);
     }
 
     public function destroy(DestroyRequest $request, ResourceQualification $resourceQualification, DeleteResourceQualificationAction $action): RedirectResponse
     {
-        return $this->handleAction(
-            fn () => $action->handle($resourceQualification),
-            'Resource qualification deleted.',
-            'Unable to delete resource qualification.'
-        );
+        $action->handle($resourceQualification);
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Resource qualification deleted.',
+        ]);
     }
 }
