@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateTaskRequest extends FormRequest
 {
@@ -14,7 +17,7 @@ class UpdateTaskRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('update', $this->route('task')) ?? false;
     }
 
     /**
@@ -31,8 +34,8 @@ class UpdateTaskRequest extends FormRequest
             'ends_at' => ['sometimes', 'date'],
             'effort_value' => ['sometimes', 'numeric', 'min:0'],
             'effort_unit' => ['sometimes', 'string', 'max:255'],
-            'priority' => ['sometimes', 'string', 'max:255'],
-            'status' => ['sometimes', 'string', 'max:255'],
+            'priority' => ['sometimes', Rule::enum(TaskPriority::class)],
+            'status' => ['sometimes', Rule::enum(TaskStatus::class)],
         ];
     }
 }

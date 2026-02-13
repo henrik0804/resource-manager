@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\AccessSection;
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateTaskAssignmentRequest extends FormRequest
 {
@@ -14,7 +18,7 @@ class UpdateTaskAssignmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('update', $this->route('task_assignment')) ?? false;
     }
 
     /**
@@ -24,6 +28,12 @@ class UpdateTaskAssignmentRequest extends FormRequest
      */
     public function rules(): array
     {
+        if (! $this->allowsFullUpdate()) {
+            return [
+                'assignee_status' => ['required', 'nullable', 'string', 'max:255'],
+            ];
+        }
+
         return [
             'task_id' => ['sometimes', 'integer', 'exists:tasks,id', 'prohibits:task'],
             'task' => ['sometimes', 'array', 'prohibits:task_id'],
@@ -33,8 +43,8 @@ class UpdateTaskAssignmentRequest extends FormRequest
             'task.ends_at' => ['required_with:task', 'date'],
             'task.effort_value' => ['required_with:task', 'numeric', 'min:0'],
             'task.effort_unit' => ['required_with:task', 'string', 'max:255'],
-            'task.priority' => ['required_with:task', 'string', 'max:255'],
-            'task.status' => ['required_with:task', 'string', 'max:255'],
+            'task.priority' => ['required_with:task', Rule::enum(TaskPriority::class)],
+            'task.status' => ['required_with:task', Rule::enum(TaskStatus::class)],
             'resource_id' => ['sometimes', 'integer', 'exists:resources,id', 'prohibits:resource'],
             'resource' => ['sometimes', 'array', 'prohibits:resource_id'],
             'resource.name' => ['required_with:resource', 'string', 'max:255'],
@@ -59,5 +69,16 @@ class UpdateTaskAssignmentRequest extends FormRequest
             'assignment_source' => ['sometimes', 'string', 'max:255'],
             'assignee_status' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
+    }
+
+    private function allowsFullUpdate(): bool
+    {
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->canWriteSection(AccessSection::ManualAssignment);
     }
 }

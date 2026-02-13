@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
+use App\Models\Task;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTaskRequest extends FormRequest
 {
@@ -14,7 +18,7 @@ class StoreTaskRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Task::class) ?? false;
     }
 
     /**
@@ -31,8 +35,8 @@ class StoreTaskRequest extends FormRequest
             'ends_at' => ['required', 'date', 'after_or_equal:starts_at'],
             'effort_value' => ['required', 'numeric', 'min:0'],
             'effort_unit' => ['required', 'string', 'max:255'],
-            'priority' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', 'max:255'],
+            'priority' => ['required', Rule::enum(TaskPriority::class)],
+            'status' => ['required', Rule::enum(TaskStatus::class)],
         ];
     }
 }

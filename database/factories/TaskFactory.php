@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use App\Models\Task;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -29,8 +31,8 @@ class TaskFactory extends Factory
             'ends_at' => $endsAt,
             'effort_value' => fake()->randomFloat(1, 2, 40),
             'effort_unit' => fake()->randomElement(['hours', 'days', 'points']),
-            'priority' => fake()->randomElement(['low', 'medium', 'high', 'urgent']),
-            'status' => fake()->randomElement(['planned', 'in_progress', 'blocked', 'done']),
+            'priority' => fake()->randomElement(TaskPriority::cases()),
+            'status' => fake()->randomElement(TaskStatus::cases()),
         ];
     }
 }

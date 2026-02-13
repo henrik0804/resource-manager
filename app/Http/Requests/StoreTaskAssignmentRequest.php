@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
+use App\Models\TaskAssignment;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTaskAssignmentRequest extends FormRequest
 {
@@ -14,7 +18,7 @@ class StoreTaskAssignmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', TaskAssignment::class) ?? false;
     }
 
     /**
@@ -33,8 +37,8 @@ class StoreTaskAssignmentRequest extends FormRequest
             'task.ends_at' => ['required_with:task', 'date', 'after_or_equal:task.starts_at'],
             'task.effort_value' => ['required_with:task', 'numeric', 'min:0'],
             'task.effort_unit' => ['required_with:task', 'string', 'max:255'],
-            'task.priority' => ['required_with:task', 'string', 'max:255'],
-            'task.status' => ['required_with:task', 'string', 'max:255'],
+            'task.priority' => ['required_with:task', Rule::enum(TaskPriority::class)],
+            'task.status' => ['required_with:task', Rule::enum(TaskStatus::class)],
             'resource_id' => ['required_without:resource', 'integer', 'exists:resources,id', 'prohibits:resource'],
             'resource' => ['required_without:resource_id', 'array', 'prohibits:resource_id'],
             'resource.name' => ['required_with:resource', 'string', 'max:255'],
