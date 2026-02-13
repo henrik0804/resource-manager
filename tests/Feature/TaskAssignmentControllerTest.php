@@ -2,19 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Enums\AccessSection;
 use App\Models\Resource;
 use App\Models\Task;
 use App\Models\TaskAssignment;
-use App\Models\User;
 
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\from;
 
 beforeEach(function (): void {
-    $user = User::factory()->create();
-    actingAs($user);
+    actingAsUserWithPermissions();
 });
 
 test('task assignments can be managed', function (): void {
@@ -47,4 +45,40 @@ test('task assignments can be managed', function (): void {
     $deleteResponse = from($backUrl)->delete(route('task-assignments.destroy', $assignment));
     $deleteResponse->assertRedirect($backUrl)->assertSessionHas('message', 'Task assignment deleted.');
     assertDatabaseMissing('task_assignments', ['id' => $assignment->id]);
+});
+
+test('employees can update only their assignment status', function (): void {
+    $backUrl = '/dashboard';
+    $employee = actingAsUserWithPermissions([
+        'read' => [AccessSection::EmployeeFeedback],
+        'write' => [],
+        'write_owned' => [AccessSection::EmployeeFeedback],
+    ]);
+
+    $task = Task::factory()->create();
+    $employeeResource = Resource::factory()->create(['user_id' => $employee->id]);
+    $otherResource = Resource::factory()->create();
+
+    $employeeAssignment = TaskAssignment::factory()->create([
+        'task_id' => $task->id,
+        'resource_id' => $employeeResource->id,
+    ]);
+
+    $otherAssignment = TaskAssignment::factory()->create([
+        'task_id' => $task->id,
+        'resource_id' => $otherResource->id,
+    ]);
+
+    from($backUrl)->put(route('task-assignments.update', $employeeAssignment), [
+        'assignee_status' => 'in_review',
+    ])->assertRedirect($backUrl)->assertSessionHas('message', 'Task assignment updated.');
+
+    assertDatabaseHas('task_assignments', [
+        'id' => $employeeAssignment->id,
+        'assignee_status' => 'in_review',
+    ]);
+
+    from($backUrl)->put(route('task-assignments.update', $otherAssignment), [
+        'assignee_status' => 'in_review',
+    ])->assertForbidden();
 });

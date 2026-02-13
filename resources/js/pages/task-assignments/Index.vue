@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 import { destroy } from '@/actions/App/Http/Controllers/TaskAssignmentController';
 import type { Column } from '@/components/DataTable.vue';
 import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { AccessSections } from '@/lib/access-sections';
 import { index } from '@/routes/task-assignments';
-import type { BreadcrumbItem } from '@/types';
+import type { AppPageProps, BreadcrumbItem } from '@/types';
 import type { Paginated, TaskAssignment } from '@/types/models';
 
 interface Props {
@@ -16,6 +18,15 @@ interface Props {
 }
 
 defineProps<Props>();
+
+const page = usePage<AppPageProps>();
+
+const canManageAssignments = computed(() => {
+    const permissions = page.props.auth?.permissions ?? {};
+    const permission = permissions[AccessSections.ManualAssignment];
+
+    return permission?.can_write ?? false;
+});
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Aufgabenzuweisungen', href: index().url },
@@ -80,6 +91,7 @@ function deleteAction(id: number) {
                 :columns="columns"
                 :search="search"
                 :delete-action="deleteAction"
+                :show-actions="canManageAssignments"
                 route-prefix="/task-assignments"
                 search-placeholder="Aufgabenzuweisungen suchen..."
                 empty-message="Keine Aufgabenzuweisungen gefunden."

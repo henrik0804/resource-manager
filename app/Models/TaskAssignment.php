@@ -67,4 +67,13 @@ class TaskAssignment extends Model
     {
         return $this->belongsTo(ResourceModel::class);
     }
+
+    public function isOwnedBy(User $user): bool
+    {
+        if ($this->relationLoaded('resource') && $this->resource) {
+            return $this->resource->user_id === $user->id;
+        }
+
+        return $this->resource()->where('user_id', $user->id)->exists();
+    }
 }
