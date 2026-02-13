@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\QualificationController;
 use App\Http\Controllers\ResourceAbsenceController;
 use App\Http\Controllers\ResourceController;
@@ -25,6 +26,7 @@ Route::get('dashboard', fn () => Inertia::render('Dashboard'))->middleware(['aut
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('resource-types', ResourceTypeController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('roles', RoleController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::resource('permissions', PermissionController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('qualifications', QualificationController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('resources', ResourceController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('resource-absences', ResourceAbsenceController::class)->only(['index', 'store', 'update', 'destroy']);

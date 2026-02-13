@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\AccessSection;
 use App\Models\Resource as ResourceModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -86,5 +87,39 @@ class User extends Authenticatable
     public function resource(): HasOne
     {
         return $this->hasOne(ResourceModel::class);
+    }
+
+    public function permissionFor(AccessSection $section): ?Permission
+    {
+        $role = $this->role;
+
+        if (! $role) {
+            return null;
+        }
+
+        if ($role->relationLoaded('permissions')) {
+            return $role->permissions->first(fn (Permission $permission) => $permission->section === $section);
+        }
+
+        return $role->permissions()->where('section', $section->value)->first();
+    }
+
+    public function canReadSection(AccessSection $section): bool
+    {
+        $permission = $this->permissionFor($section);
+
+        return $permission?->can_read
+            || $permission?->can_write
+            || $permission?->can_write_owned;
+    }
+
+    public function canWriteSection(AccessSection $section): bool
+    {
+        return (bool) $this->permissionFor($section)?->can_write;
+    }
+
+    public function canWriteOwnedSection(AccessSection $section): bool
+    {
+        return (bool) $this->permissionFor($section)?->can_write_owned;
     }
 }

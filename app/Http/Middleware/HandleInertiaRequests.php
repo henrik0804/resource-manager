@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,11 +38,28 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $permissions = null;
+
+        if ($user) {
+            $user->loadMissing('role.permissions');
+
+            $permissions = $user->role?->permissions
+                ->mapWithKeys(fn (Permission $permission) => [
+                    $permission->section->value => [
+                        'can_read' => $permission->can_read,
+                        'can_write' => $permission->can_write,
+                        'can_write_owned' => $permission->can_write_owned,
+                    ],
+                ]);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'permissions' => $permissions,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'flash' => [

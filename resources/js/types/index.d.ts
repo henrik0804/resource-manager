@@ -1,8 +1,17 @@
 import { InertiaLinkProps } from '@inertiajs/vue3';
 import type { LucideIcon } from 'lucide-vue-next';
 
+import type { AccessSection } from '@/lib/access-sections';
+
+export interface PermissionFlags {
+    can_read: boolean;
+    can_write: boolean;
+    can_write_owned: boolean;
+}
+
 export interface Auth {
     user: User;
+    permissions: Partial<Record<AccessSection, PermissionFlags>> | null;
 }
 
 export interface BreadcrumbItem {

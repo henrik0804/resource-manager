@@ -1,3 +1,5 @@
+import type { AccessSection } from '@/lib/access-sections';
+
 export interface ResourceType {
     id: number;
     name: string;
@@ -16,6 +18,19 @@ export interface Role {
     created_at: string;
     updated_at: string;
     users_count?: number;
+    [key: string]: unknown;
+}
+
+export interface Permission {
+    id: number;
+    role_id: number;
+    section: AccessSection;
+    can_read: boolean;
+    can_write: boolean;
+    can_write_owned: boolean;
+    created_at: string;
+    updated_at: string;
+    role?: Role;
     [key: string]: unknown;
 }
 
@@ -74,6 +89,10 @@ export type QualificationLevel =
     | 'advanced'
     | 'expert';
 
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export type TaskStatus = 'planned' | 'in_progress' | 'blocked' | 'done';
+
 export interface Task {
     id: number;
     title: string;
@@ -82,8 +101,8 @@ export interface Task {
     ends_at: string;
     effort_value: string;
     effort_unit: string;
-    priority: string;
-    status: string;
+    priority: TaskPriority;
+    status: TaskStatus;
     created_at: string;
     updated_at: string;
     requirements_count?: number;

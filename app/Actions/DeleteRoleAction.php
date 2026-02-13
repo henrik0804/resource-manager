@@ -32,6 +32,8 @@ final class DeleteRoleAction
                 $user->delete();
             }
 
+            $role->permissions()->delete();
+
             $role->delete();
         });
     }
