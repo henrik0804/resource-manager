@@ -2,8 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Enums\AccessSection;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+
+use function Pest\Laravel\actingAs;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,4 +53,46 @@ expect()->extend('toBeOne', fn () => $this->toBe(1));
 function something(): void
 {
     // ..
+}
+
+/**
+ * @param  array{read?: array<AccessSection>, write?: array<AccessSection>, write_owned?: array<AccessSection>}  $config
+ */
+function createRoleWithPermissions(array $config = []): Role
+{
+    $role = Role::factory()->create();
+    $sections = AccessSection::cases();
+
+    $readSections = $config['read'] ?? $sections;
+    $writeSections = $config['write'] ?? $sections;
+    $writeOwnedSections = $config['write_owned'] ?? [];
+
+    foreach ($sections as $section) {
+        $canWrite = in_array($section, $writeSections, true);
+        $canWriteOwned = in_array($section, $writeOwnedSections, true);
+        $canRead = $canWrite || $canWriteOwned || in_array($section, $readSections, true);
+
+        Permission::query()->create([
+            'role_id' => $role->id,
+            'section' => $section,
+            'can_read' => $canRead,
+            'can_write' => $canWrite,
+            'can_write_owned' => $canWriteOwned,
+        ]);
+    }
+
+    return $role;
+}
+
+/**
+ * @param  array{read?: array<AccessSection>, write?: array<AccessSection>, write_owned?: array<AccessSection>}  $config
+ */
+function actingAsUserWithPermissions(array $config = []): User
+{
+    $role = createRoleWithPermissions($config);
+    $user = User::factory()->create(['role_id' => $role->id]);
+
+    actingAs($user);
+
+    return $user;
 }

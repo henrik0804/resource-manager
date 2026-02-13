@@ -16,7 +16,7 @@ class UpdateTaskRequirementRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('update', $this->route('task_requirement')) ?? false;
     }
 
     /**

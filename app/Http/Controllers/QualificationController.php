@@ -14,6 +14,7 @@ use App\Http\Requests\UpdateQualificationRequest;
 use App\Models\Qualification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +22,8 @@ final class QualificationController
 {
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Qualification::class);
+
         $search = $request->string('search')->toString();
 
         $qualifications = Qualification::query()
@@ -59,6 +62,8 @@ final class QualificationController
 
     public function destroy(DestroyRequest $request, Qualification $qualification, DeleteQualificationAction $action): RedirectResponse
     {
+        Gate::authorize('delete', $qualification);
+
         try {
             $action->handle($qualification, $request->confirmsDependencyDeletion());
         } catch (HasDependentRelationshipsException $e) {

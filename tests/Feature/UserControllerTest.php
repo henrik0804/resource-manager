@@ -6,14 +6,12 @@ use App\Models\Resource;
 use App\Models\Role;
 use App\Models\User;
 
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\from;
 
 beforeEach(function (): void {
-    $user = User::factory()->create();
-    actingAs($user);
+    actingAsUserWithPermissions();
 });
 
 test('users can be managed', function (): void {

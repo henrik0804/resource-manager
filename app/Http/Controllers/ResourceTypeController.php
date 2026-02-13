@@ -14,6 +14,7 @@ use App\Http\Requests\UpdateResourceTypeRequest;
 use App\Models\ResourceType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +22,8 @@ final class ResourceTypeController
 {
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', ResourceType::class);
+
         $search = $request->string('search')->toString();
 
         $resourceTypes = ResourceType::query()
@@ -59,6 +62,8 @@ final class ResourceTypeController
 
     public function destroy(DestroyRequest $request, ResourceType $resourceType, DeleteResourceTypeAction $action): RedirectResponse
     {
+        Gate::authorize('delete', $resourceType);
+
         try {
             $action->handle($resourceType, $request->confirmsDependencyDeletion());
         } catch (HasDependentRelationshipsException $e) {

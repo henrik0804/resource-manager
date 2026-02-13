@@ -14,6 +14,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +22,8 @@ final class UserController
 {
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', User::class);
+
         $search = $request->string('search')->toString();
 
         $users = User::query()
@@ -59,6 +62,8 @@ final class UserController
 
     public function destroy(DestroyRequest $request, User $user, DeleteUserAction $action): RedirectResponse
     {
+        Gate::authorize('delete', $user);
+
         try {
             $action->handle($user, $request->confirmsDependencyDeletion());
         } catch (HasDependentRelationshipsException $e) {

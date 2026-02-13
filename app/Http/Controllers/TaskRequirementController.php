@@ -13,6 +13,7 @@ use App\Http\Requests\UpdateTaskRequirementRequest;
 use App\Models\TaskRequirement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,6 +21,8 @@ final class TaskRequirementController
 {
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', TaskRequirement::class);
+
         $search = $request->string('search')->toString();
 
         $taskRequirements = TaskRequirement::query()
@@ -59,6 +62,8 @@ final class TaskRequirementController
 
     public function destroy(DestroyRequest $request, TaskRequirement $taskRequirement, DeleteTaskRequirementAction $action): RedirectResponse
     {
+        Gate::authorize('delete', $taskRequirement);
+
         $action->handle($taskRequirement);
 
         return redirect()->back()->with([

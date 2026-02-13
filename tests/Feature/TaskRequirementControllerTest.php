@@ -6,16 +6,13 @@ use App\Enums\QualificationLevel;
 use App\Models\Qualification;
 use App\Models\Task;
 use App\Models\TaskRequirement;
-use App\Models\User;
 
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\from;
 
 beforeEach(function (): void {
-    $user = User::factory()->create();
-    actingAs($user);
+    actingAsUserWithPermissions();
 });
 
 test('task requirements can be managed', function (): void {

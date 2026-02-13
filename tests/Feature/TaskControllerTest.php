@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 use App\Models\Task;
 use App\Models\TaskRequirement;
-use App\Models\User;
 
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\from;
 
 beforeEach(function (): void {
-    $user = User::factory()->create();
-    actingAs($user);
+    actingAsUserWithPermissions();
 });
 
 test('tasks can be managed', function (): void {

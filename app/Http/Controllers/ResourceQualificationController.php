@@ -13,6 +13,7 @@ use App\Http\Requests\UpdateResourceQualificationRequest;
 use App\Models\ResourceQualification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,6 +21,8 @@ final class ResourceQualificationController
 {
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', ResourceQualification::class);
+
         $search = $request->string('search')->toString();
 
         $resourceQualifications = ResourceQualification::query()
@@ -59,6 +62,8 @@ final class ResourceQualificationController
 
     public function destroy(DestroyRequest $request, ResourceQualification $resourceQualification, DeleteResourceQualificationAction $action): RedirectResponse
     {
+        Gate::authorize('delete', $resourceQualification);
+
         $action->handle($resourceQualification);
 
         return redirect()->back()->with([

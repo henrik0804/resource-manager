@@ -14,6 +14,7 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +22,8 @@ final class TaskController
 {
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Task::class);
+
         $search = $request->string('search')->toString();
 
         $tasks = Task::query()
@@ -58,6 +61,8 @@ final class TaskController
 
     public function destroy(DestroyRequest $request, Task $task, DeleteTaskAction $action): RedirectResponse
     {
+        Gate::authorize('delete', $task);
+
         try {
             $action->handle($task, $request->confirmsDependencyDeletion());
         } catch (HasDependentRelationshipsException $e) {

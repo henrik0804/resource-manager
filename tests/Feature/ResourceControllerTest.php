@@ -5,16 +5,13 @@ declare(strict_types=1);
 use App\Models\Resource;
 use App\Models\ResourceType;
 use App\Models\TaskAssignment;
-use App\Models\User;
 
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\from;
 
 beforeEach(function (): void {
-    $user = User::factory()->create();
-    actingAs($user);
+    actingAsUserWithPermissions();
 });
 
 test('resources can be managed', function (): void {

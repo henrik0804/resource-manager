@@ -14,6 +14,7 @@ use App\Http\Requests\UpdateRoleRequest;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +22,8 @@ final class RoleController
 {
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Role::class);
+
         $search = $request->string('search')->toString();
 
         $roles = Role::query()
@@ -59,6 +62,8 @@ final class RoleController
 
     public function destroy(DestroyRequest $request, Role $role, DeleteRoleAction $action): RedirectResponse
     {
+        Gate::authorize('delete', $role);
+
         try {
             $action->handle($role, $request->confirmsDependencyDeletion());
         } catch (HasDependentRelationshipsException $e) {

@@ -11,8 +11,7 @@ use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\from;
 
 beforeEach(function (): void {
-    $user = User::factory()->create();
-    actingAs($user);
+    actingAsUserWithPermissions();
 });
 
 test('roles can be managed', function (): void {
@@ -66,4 +65,11 @@ test('deleting role with users and confirmation cascades', function (): void {
     $deleteResponse->assertRedirect($backUrl)->assertSessionHas('message', 'Role deleted.');
     assertDatabaseMissing('roles', ['id' => $role->id]);
     assertDatabaseMissing('users', ['id' => $user->id]);
+});
+
+test('users without role permissions cannot access roles index', function (): void {
+    $user = User::factory()->create();
+
+    actingAs($user)->get(route('roles.index'))
+        ->assertForbidden();
 });
