@@ -12,12 +12,29 @@ use App\Http\Requests\StoreTaskRequirementRequest;
 use App\Http\Requests\UpdateTaskRequirementRequest;
 use App\Models\TaskRequirement;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class TaskRequirementController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): Response
     {
-        return $this->backSuccess('Task requirements loaded.');
+        $search = $request->string('search')->toString();
+
+        $taskRequirements = TaskRequirement::query()
+            ->with(['task', 'qualification'])
+            ->when($search, fn ($query, $search) => $query
+                ->whereHas('task', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                ->orWhereHas('qualification', fn ($q) => $q->where('name', 'like', "%{$search}%")))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('task-requirements/Index', [
+            'taskRequirements' => $taskRequirements,
+            'search' => $search,
+        ]);
     }
 
     public function show(TaskRequirement $taskRequirement): RedirectResponse

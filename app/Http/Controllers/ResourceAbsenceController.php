@@ -12,12 +12,27 @@ use App\Http\Requests\StoreResourceAbsenceRequest;
 use App\Http\Requests\UpdateResourceAbsenceRequest;
 use App\Models\ResourceAbsence;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ResourceAbsenceController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): Response
     {
-        return $this->backSuccess('Resource absences loaded.');
+        $search = $request->string('search')->toString();
+
+        $resourceAbsences = ResourceAbsence::query()
+            ->with('resource')
+            ->when($search, fn ($query, $search) => $query->whereHas('resource', fn ($q) => $q->where('name', 'like', "%{$search}%")))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('resource-absences/Index', [
+            'resourceAbsences' => $resourceAbsences,
+            'search' => $search,
+        ]);
     }
 
     public function show(ResourceAbsence $resourceAbsence): RedirectResponse

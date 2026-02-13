@@ -12,12 +12,27 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class TaskController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): Response
     {
-        return $this->backSuccess('Tasks loaded.');
+        $search = $request->string('search')->toString();
+
+        $tasks = Task::query()
+            ->when($search, fn ($query, $search) => $query->where('title', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%"))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('tasks/Index', [
+            'tasks' => $tasks,
+            'search' => $search,
+        ]);
     }
 
     public function show(Task $task): RedirectResponse

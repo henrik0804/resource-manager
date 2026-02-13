@@ -12,12 +12,28 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): Response
     {
-        return $this->backSuccess('Users loaded.');
+        $search = $request->string('search')->toString();
+
+        $users = User::query()
+            ->with('role')
+            ->when($search, fn ($query, $search) => $query->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%"))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('users/Index', [
+            'users' => $users,
+            'search' => $search,
+        ]);
     }
 
     public function show(User $user): RedirectResponse

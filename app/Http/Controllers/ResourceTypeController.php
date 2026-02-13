@@ -12,12 +12,28 @@ use App\Http\Requests\StoreResourceTypeRequest;
 use App\Http\Requests\UpdateResourceTypeRequest;
 use App\Models\ResourceType;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ResourceTypeController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): Response
     {
-        return $this->backSuccess('Resource types loaded.');
+        $search = $request->string('search')->toString();
+
+        $resourceTypes = ResourceType::query()
+            ->withCount(['resources', 'qualifications'])
+            ->when($search, fn ($query, $search) => $query->where('name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%"))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('resource-types/Index', [
+            'resourceTypes' => $resourceTypes,
+            'search' => $search,
+        ]);
     }
 
     public function show(ResourceType $resourceType): RedirectResponse

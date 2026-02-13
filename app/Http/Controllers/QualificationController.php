@@ -12,12 +12,28 @@ use App\Http\Requests\StoreQualificationRequest;
 use App\Http\Requests\UpdateQualificationRequest;
 use App\Models\Qualification;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class QualificationController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): Response
     {
-        return $this->backSuccess('Qualifications loaded.');
+        $search = $request->string('search')->toString();
+
+        $qualifications = Qualification::query()
+            ->with('resourceType')
+            ->when($search, fn ($query, $search) => $query->where('name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%"))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('qualifications/Index', [
+            'qualifications' => $qualifications,
+            'search' => $search,
+        ]);
     }
 
     public function show(Qualification $qualification): RedirectResponse

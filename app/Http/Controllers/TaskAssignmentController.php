@@ -12,12 +12,29 @@ use App\Http\Requests\StoreTaskAssignmentRequest;
 use App\Http\Requests\UpdateTaskAssignmentRequest;
 use App\Models\TaskAssignment;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class TaskAssignmentController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(Request $request): Response
     {
-        return $this->backSuccess('Task assignments loaded.');
+        $search = $request->string('search')->toString();
+
+        $taskAssignments = TaskAssignment::query()
+            ->with(['task', 'resource'])
+            ->when($search, fn ($query, $search) => $query
+                ->whereHas('task', fn ($q) => $q->where('title', 'like', "%{$search}%"))
+                ->orWhereHas('resource', fn ($q) => $q->where('name', 'like', "%{$search}%")))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('task-assignments/Index', [
+            'taskAssignments' => $taskAssignments,
+            'search' => $search,
+        ]);
     }
 
     public function show(TaskAssignment $taskAssignment): RedirectResponse
