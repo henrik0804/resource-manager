@@ -33,6 +33,9 @@ interface Props {
     search?: string;
     routePrefix: string;
     deleteAction: (id: number) => { url: string; method: string };
+    showActions?: boolean;
+    showEdit?: boolean;
+    showDelete?: boolean;
     emptyMessage?: string;
     deleteTitle?: string;
     deleteDescription?: string;
@@ -42,6 +45,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     searchPlaceholder: 'Suchen...',
     search: '',
+    showActions: true,
+    showEdit: true,
+    showDelete: true,
     emptyMessage: 'Keine Einträge gefunden.',
     deleteTitle: 'Eintrag löschen',
     deleteDescription:
@@ -168,6 +174,7 @@ function getCellValue(row: T, column: Column<T>): string {
 }
 
 const showPagination = computed(() => props.data.last_page > 1);
+const actionColumnCount = computed(() => (props.showActions ? 1 : 0));
 
 const paginationInfo = computed(() => {
     const { from, to, total } = props.data;
@@ -202,7 +209,7 @@ const paginationInfo = computed(() => {
                         >
                             {{ column.label }}
                         </TableHead>
-                        <TableHead class="w-12">
+                        <TableHead v-if="showActions" class="w-12">
                             <span class="sr-only">Aktionen</span>
                         </TableHead>
                     </TableRow>
@@ -220,15 +227,20 @@ const paginationInfo = computed(() => {
                             >
                                 {{ getCellValue(row, column) }}
                             </TableCell>
-                            <TableCell class="w-12">
+                            <TableCell v-if="showActions" class="w-12">
                                 <ActionCell
+                                    :show-edit="props.showEdit"
+                                    :show-delete="props.showDelete"
                                     @edit="emit('edit', row)"
                                     @delete="confirmDelete(row)"
                                 />
                             </TableCell>
                         </TableRow>
                     </template>
-                    <TableEmpty v-else :colspan="columns.length + 1">
+                    <TableEmpty
+                        v-else
+                        :colspan="columns.length + actionColumnCount"
+                    >
                         <p class="text-muted-foreground">
                             {{ emptyMessage }}
                         </p>
