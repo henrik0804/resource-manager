@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\StoreTaskAction;
+use App\Enums\EffortUnit;
 use App\Models\Task;
 use Carbon\CarbonImmutable;
 
@@ -23,7 +24,7 @@ test('store task action creates a task', function (): void {
 
     expect($task)->toBeInstanceOf(Task::class);
     expect($task->title)->toBe('Crew setup');
-    expect($task->effort_unit)->toBe('hours');
+    expect($task->effort_unit)->toBe(EffortUnit::Hours);
 });
 
 test('store task action allows null descriptions', function (): void {

@@ -22,7 +22,7 @@ test('resources can be managed', function (): void {
         'name' => 'Room A',
         'resource_type_id' => $resourceType->id,
         'capacity_value' => 8,
-        'capacity_unit' => 'seats',
+        'capacity_unit' => 'slots',
     ]);
 
     $storeResponse->assertRedirect($backUrl)->assertSessionHas('message', 'Resource created.');
@@ -31,13 +31,13 @@ test('resources can be managed', function (): void {
     expect($resource)->not()->toBeNull();
 
     $updateResponse = from($backUrl)->put(route('resources.update', $resource), [
-        'capacity_unit' => 'workstations',
+        'capacity_unit' => 'slots',
     ]);
 
     $updateResponse->assertRedirect($backUrl)->assertSessionHas('message', 'Resource updated.');
     assertDatabaseHas('resources', [
         'id' => $resource->id,
-        'capacity_unit' => 'workstations',
+        'capacity_unit' => 'slots',
     ]);
 
     $deleteResponse = from($backUrl)->delete(route('resources.destroy', $resource));

@@ -16,7 +16,7 @@ test('store resource action creates a resource with ids', function (): void {
         'name' => 'Studio Alpha',
         'resource_type_id' => $resourceType->id,
         'capacity_value' => 8,
-        'capacity_unit' => 'hours/day',
+        'capacity_unit' => 'hours_per_day',
         'user_id' => $user->id,
     ]);
 

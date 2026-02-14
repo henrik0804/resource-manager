@@ -33,13 +33,13 @@ test('task assignments can be managed', function (): void {
     expect($assignment)->not()->toBeNull();
 
     $updateResponse = from($backUrl)->put(route('task-assignments.update', $assignment), [
-        'assignee_status' => 'confirmed',
+        'assignee_status' => 'accepted',
     ]);
 
     $updateResponse->assertRedirect($backUrl)->assertSessionHas('message', 'Task assignment updated.');
     assertDatabaseHas('task_assignments', [
         'id' => $assignment->id,
-        'assignee_status' => 'confirmed',
+        'assignee_status' => 'accepted',
     ]);
 
     $deleteResponse = from($backUrl)->delete(route('task-assignments.destroy', $assignment));
@@ -70,15 +70,15 @@ test('employees can update only their assignment status', function (): void {
     ]);
 
     from($backUrl)->put(route('task-assignments.update', $employeeAssignment), [
-        'assignee_status' => 'in_review',
+        'assignee_status' => 'in_progress',
     ])->assertRedirect($backUrl)->assertSessionHas('message', 'Task assignment updated.');
 
     assertDatabaseHas('task_assignments', [
         'id' => $employeeAssignment->id,
-        'assignee_status' => 'in_review',
+        'assignee_status' => 'in_progress',
     ]);
 
     from($backUrl)->put(route('task-assignments.update', $otherAssignment), [
-        'assignee_status' => 'in_review',
+        'assignee_status' => 'in_progress',
     ])->assertForbidden();
 });

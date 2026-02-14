@@ -12,7 +12,7 @@ use Carbon\CarbonImmutable;
 test('conflict detection reports double booking, overload, and unavailability', function (): void {
     $resource = Resource::factory()->create([
         'capacity_value' => 1,
-        'capacity_unit' => 'ratio',
+        'capacity_unit' => 'hours_per_day',
     ]);
 
     $existingAssignment = TaskAssignment::factory()->create([
@@ -47,8 +47,8 @@ test('conflict detection reports double booking, overload, and unavailability', 
     expect($doubleBooked['related_ids'])->toEqualCanonicalizing([$existingAssignment->id]);
 
     $overloaded = $report->conflictsFor(ConflictType::Overloaded)->first();
-    expect($overloaded['metrics'])->toHaveKeys(['allocation_ratio', 'capacity_ratio']);
-    expect($overloaded['metrics']['allocation_ratio'])->toBeGreaterThan($overloaded['metrics']['capacity_ratio']);
+    expect($overloaded['metrics'])->toHaveKeys(['total_allocation', 'capacity', 'capacity_unit']);
+    expect($overloaded['metrics']['total_allocation'])->toBeGreaterThan($overloaded['metrics']['capacity']);
 
     $unavailable = $report->conflictsFor(ConflictType::Unavailable)->first();
     expect($unavailable['related_ids'])->toEqualCanonicalizing([$absence->id]);

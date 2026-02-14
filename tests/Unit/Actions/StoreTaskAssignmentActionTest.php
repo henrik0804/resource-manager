@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\StoreTaskAssignmentAction;
+use App\Enums\AssignmentSource;
 use App\Models\Resource;
 use App\Models\Task;
 use App\Models\TaskAssignment;
@@ -19,13 +20,13 @@ test('store task assignment action creates an assignment', function (): void {
         'starts_at' => $startsAt,
         'allocation_ratio' => 0.5,
         'assignment_source' => 'manual',
-        'assignee_status' => 'confirmed',
+        'assignee_status' => 'accepted',
     ]);
 
     expect($assignment)->toBeInstanceOf(TaskAssignment::class);
     expect($assignment->task_id)->toBe($task->id);
     expect($assignment->resource_id)->toBe($resource->id);
-    expect($assignment->assignment_source)->toBe('manual');
+    expect($assignment->assignment_source)->toBe(AssignmentSource::Manual);
 });
 
 test('store task assignment action can create dependencies', function (): void {
@@ -48,7 +49,7 @@ test('store task assignment action can create dependencies', function (): void {
                 'name' => 'Venue',
             ],
         ],
-        'assignment_source' => 'auto',
+        'assignment_source' => 'automated',
     ]);
 
     $task = Task::query()->first();
