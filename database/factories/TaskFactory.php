@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\EffortUnit;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\Task;
@@ -30,7 +31,7 @@ class TaskFactory extends Factory
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
             'effort_value' => fake()->randomFloat(1, 2, 40),
-            'effort_unit' => fake()->randomElement(['hours', 'days', 'points']),
+            'effort_unit' => fake()->randomElement(EffortUnit::cases()),
             'priority' => fake()->randomElement(TaskPriority::cases()),
             'status' => fake()->randomElement(TaskStatus::cases()),
         ];

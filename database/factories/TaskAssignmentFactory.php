@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\AssigneeStatus;
+use App\Enums\AssignmentSource;
 use App\Models\Resource;
 use App\Models\Task;
 use App\Models\TaskAssignment;
@@ -32,8 +34,8 @@ class TaskAssignmentFactory extends Factory
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
             'allocation_ratio' => fake()->optional()->randomFloat(2, 0.3, 1.0),
-            'assignment_source' => fake()->randomElement(['manual', 'auto']),
-            'assignee_status' => fake()->optional()->randomElement(['tentative', 'confirmed', 'declined']),
+            'assignment_source' => fake()->randomElement(AssignmentSource::cases()),
+            'assignee_status' => fake()->optional()->randomElement(AssigneeStatus::cases()),
         ];
     }
 }

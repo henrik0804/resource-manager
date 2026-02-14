@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\CapacityUnit;
 use App\Models\Resource;
 use App\Models\ResourceType;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -26,7 +27,7 @@ class ResourceFactory extends Factory
             'name' => fake()->unique()->company(),
             'resource_type_id' => ResourceType::factory(),
             'capacity_value' => $capacityValue,
-            'capacity_unit' => $capacityValue === null ? null : fake()->randomElement(['hours/day', 'seats', 'units']),
+            'capacity_unit' => $capacityValue === null ? null : fake()->randomElement(CapacityUnit::cases()),
             'user_id' => null,
         ];
     }

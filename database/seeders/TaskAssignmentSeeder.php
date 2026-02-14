@@ -45,8 +45,8 @@ class TaskAssignmentSeeder extends Seeder
                     'starts_at' => $startsAt,
                     'ends_at' => $endsAt,
                     'allocation_ratio' => fake()->optional()->randomFloat(2, 0.3, 1.0),
-                    'assignment_source' => fake()->randomElement(['manual', 'auto']),
-                    'assignee_status' => fake()->optional()->randomElement(['tentative', 'confirmed', 'declined']),
+                    'assignment_source' => fake()->randomElement(AssignmentSource::cases()),
+                    'assignee_status' => fake()->optional()->randomElement(AssigneeStatus::cases()),
                 ]);
             }
         }

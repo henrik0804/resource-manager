@@ -33,7 +33,7 @@ class ResourceSeeder extends Seeder
                 'name' => $user->name,
                 'resource_type_id' => $personTypeId,
                 'capacity_value' => 8,
-                'capacity_unit' => 'hours/day',
+                'capacity_unit' => CapacityUnit::HoursPerDay,
                 'user_id' => $user->id,
             ]);
         }
@@ -42,7 +42,7 @@ class ResourceSeeder extends Seeder
             'name' => 'Design Team',
             'resource_type_id' => $teamTypeId,
             'capacity_value' => 5,
-            'capacity_unit' => 'people',
+            'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
 
@@ -50,7 +50,7 @@ class ResourceSeeder extends Seeder
             'name' => 'Operations Team',
             'resource_type_id' => $teamTypeId,
             'capacity_value' => 4,
-            'capacity_unit' => 'people',
+            'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
 
@@ -58,7 +58,7 @@ class ResourceSeeder extends Seeder
             'name' => 'Conference Room A',
             'resource_type_id' => $roomTypeId,
             'capacity_value' => 12,
-            'capacity_unit' => 'seats',
+            'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
 
@@ -66,7 +66,7 @@ class ResourceSeeder extends Seeder
             'name' => 'Workshop Bay',
             'resource_type_id' => $roomTypeId,
             'capacity_value' => 8,
-            'capacity_unit' => 'seats',
+            'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
 
@@ -74,7 +74,7 @@ class ResourceSeeder extends Seeder
             'name' => 'Forklift #2',
             'resource_type_id' => $equipmentTypeId,
             'capacity_value' => 1,
-            'capacity_unit' => 'unit',
+            'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
 
@@ -82,7 +82,7 @@ class ResourceSeeder extends Seeder
             'name' => '3D Printer',
             'resource_type_id' => $equipmentTypeId,
             'capacity_value' => 1,
-            'capacity_unit' => 'unit',
+            'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
     }

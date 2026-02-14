@@ -17,12 +17,12 @@ class TaskSeeder extends Seeder
     public function run(): void
     {
         $tasks = [
-            ['title' => 'Plan Q2 roadmap', 'effort_value' => 12, 'effort_unit' => 'hours', 'priority' => TaskPriority::High, 'status' => TaskStatus::Planned, 'start_offset' => 2, 'duration_hours' => 10],
-            ['title' => 'Warehouse layout update', 'effort_value' => 24, 'effort_unit' => 'hours', 'priority' => TaskPriority::Medium, 'status' => TaskStatus::InProgress, 'start_offset' => -1, 'duration_hours' => 16],
-            ['title' => 'Customer onboarding flow review', 'effort_value' => 8, 'effort_unit' => 'hours', 'priority' => TaskPriority::Medium, 'status' => TaskStatus::Planned, 'start_offset' => 4, 'duration_hours' => 6],
-            ['title' => 'Monthly capacity report', 'effort_value' => 5, 'effort_unit' => 'hours', 'priority' => TaskPriority::Low, 'status' => TaskStatus::Done, 'start_offset' => -8, 'duration_hours' => 4],
-            ['title' => 'Safety compliance walkthrough', 'effort_value' => 6, 'effort_unit' => 'hours', 'priority' => TaskPriority::High, 'status' => TaskStatus::Planned, 'start_offset' => 6, 'duration_hours' => 5],
-            ['title' => 'Ops tooling upgrade', 'effort_value' => 18, 'effort_unit' => 'hours', 'priority' => TaskPriority::Urgent, 'status' => TaskStatus::InProgress, 'start_offset' => 1, 'duration_hours' => 14],
+            ['title' => 'Plan Q2 roadmap', 'effort_value' => 12, 'effort_unit' => EffortUnit::Hours, 'priority' => TaskPriority::High, 'status' => TaskStatus::Planned, 'start_offset' => 2, 'duration_hours' => 10],
+            ['title' => 'Warehouse layout update', 'effort_value' => 3, 'effort_unit' => EffortUnit::Days, 'priority' => TaskPriority::Medium, 'status' => TaskStatus::InProgress, 'start_offset' => -1, 'duration_hours' => 16],
+            ['title' => 'Customer onboarding flow review', 'effort_value' => 8, 'effort_unit' => EffortUnit::Hours, 'priority' => TaskPriority::Medium, 'status' => TaskStatus::Planned, 'start_offset' => 4, 'duration_hours' => 6],
+            ['title' => 'Monthly capacity report', 'effort_value' => 5, 'effort_unit' => EffortUnit::Hours, 'priority' => TaskPriority::Low, 'status' => TaskStatus::Done, 'start_offset' => -8, 'duration_hours' => 4],
+            ['title' => 'Safety compliance walkthrough', 'effort_value' => 6, 'effort_unit' => EffortUnit::Hours, 'priority' => TaskPriority::High, 'status' => TaskStatus::Planned, 'start_offset' => 6, 'duration_hours' => 5],
+            ['title' => 'Ops tooling upgrade', 'effort_value' => 2, 'effort_unit' => EffortUnit::Days, 'priority' => TaskPriority::Urgent, 'status' => TaskStatus::InProgress, 'start_offset' => 1, 'duration_hours' => 14],
         ];
 
         foreach ($tasks as $task) {
