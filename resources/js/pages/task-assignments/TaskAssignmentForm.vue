@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 
+import CheckConflicts from '@/actions/App/Http/Controllers/CheckConflictsController';
 import {
     store,
     update,
 } from '@/actions/App/Http/Controllers/TaskAssignmentController';
+import type { ConflictCheckResponse } from '@/components/ConflictAlert.vue';
+import ConflictAlert from '@/components/ConflictAlert.vue';
 import FormDialog from '@/components/FormDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -19,11 +22,18 @@ import {
 } from '@/components/ui/select';
 import type { Resource, Task, TaskAssignment } from '@/types/models';
 
+interface EnumOption {
+    value: string;
+    label: string;
+}
+
 interface Props {
     open: boolean;
     taskAssignment?: TaskAssignment | null;
     tasks: Pick<Task, 'id' | 'title'>[];
     resources: Pick<Resource, 'id' | 'name'>[];
+    assignmentSources: EnumOption[];
+    assigneeStatuses: EnumOption[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -53,6 +63,91 @@ const form = useForm({
     assignee_status: '',
 });
 
+const conflictResult = ref<ConflictCheckResponse | null>(null);
+const isCheckingConflicts = ref(false);
+let conflictCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+let conflictAbortController: AbortController | null = null;
+
+function canCheckConflicts(): boolean {
+    if (!form.resource_id) {
+        return false;
+    }
+
+    const hasAssignmentDates = form.starts_at !== '' && form.ends_at !== '';
+    const hasTaskId = form.task_id !== null;
+
+    return hasAssignmentDates || hasTaskId;
+}
+
+async function checkConflicts(): Promise<void> {
+    if (!canCheckConflicts()) {
+        conflictResult.value = null;
+
+        return;
+    }
+
+    conflictAbortController?.abort();
+    conflictAbortController = new AbortController();
+
+    isCheckingConflicts.value = true;
+
+    try {
+        const csrfToken =
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content') ?? '';
+
+        const response = await fetch(CheckConflicts.url(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            signal: conflictAbortController.signal,
+            body: JSON.stringify({
+                resource_id: form.resource_id,
+                task_id: form.task_id,
+                starts_at: form.starts_at || null,
+                ends_at: form.ends_at || null,
+                allocation_ratio: form.allocation_ratio || null,
+                exclude_assignment_id: props.taskAssignment?.id ?? null,
+            }),
+        });
+
+        if (response.ok) {
+            conflictResult.value =
+                (await response.json()) as ConflictCheckResponse;
+        }
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+            return;
+        }
+    } finally {
+        isCheckingConflicts.value = false;
+    }
+}
+
+function scheduleConflictCheck(): void {
+    if (conflictCheckTimeout) {
+        clearTimeout(conflictCheckTimeout);
+    }
+    conflictCheckTimeout = setTimeout(checkConflicts, 500);
+}
+
+watch(
+    () => [
+        form.resource_id,
+        form.task_id,
+        form.starts_at,
+        form.ends_at,
+        form.allocation_ratio,
+    ],
+    () => {
+        scheduleConflictCheck();
+    },
+);
+
 watch(
     () => props.open,
     (open) => {
@@ -67,6 +162,16 @@ watch(
         } else if (open) {
             form.reset();
             form.clearErrors();
+        }
+
+        if (!open) {
+            conflictResult.value = null;
+            isCheckingConflicts.value = false;
+            conflictAbortController?.abort();
+
+            if (conflictCheckTimeout) {
+                clearTimeout(conflictCheckTimeout);
+            }
         }
     },
 );
@@ -191,29 +296,59 @@ function submit() {
             <InputError :message="form.errors.allocation_ratio" />
         </div>
 
-        <div class="grid gap-2">
-            <Label for="assignment-source"
-                >Quelle <span class="text-destructive">*</span></Label
-            >
-            <Input
-                id="assignment-source"
-                v-model="form.assignment_source"
-                placeholder="z.B. Manuell, Automatisch"
-                :disabled="form.processing"
-                required
-            />
-            <InputError :message="form.errors.assignment_source" />
+        <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-2">
+                <Label for="assignment-source"
+                    >Quelle <span class="text-destructive">*</span></Label
+                >
+                <Select
+                    :model-value="form.assignment_source"
+                    :disabled="form.processing"
+                    @update:model-value="form.assignment_source = $event"
+                >
+                    <SelectTrigger id="assignment-source">
+                        <SelectValue placeholder="Quelle wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="s in assignmentSources"
+                            :key="s.value"
+                            :value="s.value"
+                        >
+                            {{ s.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+                <InputError :message="form.errors.assignment_source" />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="assignment-status">Status</Label>
+                <Select
+                    :model-value="form.assignee_status ?? ''"
+                    :disabled="form.processing"
+                    @update:model-value="form.assignee_status = $event || ''"
+                >
+                    <SelectTrigger id="assignment-status">
+                        <SelectValue placeholder="Kein Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="s in assigneeStatuses"
+                            :key="s.value"
+                            :value="s.value"
+                        >
+                            {{ s.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+                <InputError :message="form.errors.assignee_status" />
+            </div>
         </div>
 
-        <div class="grid gap-2">
-            <Label for="assignment-status">Status</Label>
-            <Input
-                id="assignment-status"
-                v-model="form.assignee_status"
-                placeholder="Optionaler Status"
-                :disabled="form.processing"
-            />
-            <InputError :message="form.errors.assignee_status" />
-        </div>
+        <ConflictAlert
+            v-if="conflictResult?.has_conflicts"
+            :conflicts="conflictResult.conflicts"
+        />
     </FormDialog>
 </template>

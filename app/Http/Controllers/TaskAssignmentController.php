@@ -8,6 +8,8 @@ use App\Actions\DeleteTaskAssignmentAction;
 use App\Actions\StoreTaskAssignmentAction;
 use App\Actions\UpdateTaskAssignmentAction;
 use App\Enums\AccessSection;
+use App\Enums\AssigneeStatus;
+use App\Enums\AssignmentSource;
 use App\Http\Requests\DestroyRequest;
 use App\Http\Requests\StoreTaskAssignmentRequest;
 use App\Http\Requests\UpdateTaskAssignmentRequest;
@@ -47,10 +49,24 @@ final class TaskAssignmentController
         $tasks = Task::query()->orderBy('title')->get(['id', 'title']);
         $resources = Resource::query()->orderBy('name')->get(['id', 'name']);
 
+        $assignmentSources = collect(AssignmentSource::cases())
+            ->map(fn (AssignmentSource $source) => [
+                'value' => $source->value,
+                'label' => $source->label(),
+            ]);
+
+        $assigneeStatuses = collect(AssigneeStatus::cases())
+            ->map(fn (AssigneeStatus $status) => [
+                'value' => $status->value,
+                'label' => $status->label(),
+            ]);
+
         return Inertia::render('task-assignments/Index', [
             'taskAssignments' => $taskAssignments,
             'tasks' => $tasks,
             'resources' => $resources,
+            'assignmentSources' => $assignmentSources,
+            'assigneeStatuses' => $assigneeStatuses,
             'search' => $search,
         ]);
     }

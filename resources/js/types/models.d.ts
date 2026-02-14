@@ -50,7 +50,7 @@ export interface Resource {
     name: string;
     resource_type_id: number;
     capacity_value: string | null;
-    capacity_unit: string | null;
+    capacity_unit: CapacityUnit | null;
     user_id: number | null;
     created_at: string;
     updated_at: string;
@@ -89,9 +89,22 @@ export type QualificationLevel =
     | 'advanced'
     | 'expert';
 
+export type CapacityUnit = 'hours_per_day' | 'slots';
+
+export type EffortUnit = 'hours' | 'days';
+
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export type TaskStatus = 'planned' | 'in_progress' | 'blocked' | 'done';
+
+export type AssignmentSource = 'manual' | 'automated';
+
+export type AssigneeStatus =
+    | 'pending'
+    | 'accepted'
+    | 'in_progress'
+    | 'done'
+    | 'rejected';
 
 export interface Task {
     id: number;
@@ -100,7 +113,7 @@ export interface Task {
     starts_at: string;
     ends_at: string;
     effort_value: string;
-    effort_unit: string;
+    effort_unit: EffortUnit;
     priority: TaskPriority;
     status: TaskStatus;
     created_at: string;
@@ -129,8 +142,8 @@ export interface TaskAssignment {
     starts_at: string | null;
     ends_at: string | null;
     allocation_ratio: string | null;
-    assignment_source: string;
-    assignee_status: string | null;
+    assignment_source: AssignmentSource;
+    assignee_status: AssigneeStatus | null;
     created_at: string;
     updated_at: string;
     task?: Task;

@@ -16,10 +16,17 @@ import type { Paginated, Resource, Task, TaskAssignment } from '@/types/models';
 
 import TaskAssignmentForm from './TaskAssignmentForm.vue';
 
+interface EnumOption {
+    value: string;
+    label: string;
+}
+
 interface Props {
     taskAssignments: Paginated<TaskAssignment>;
     tasks: Pick<Task, 'id' | 'title'>[];
     resources: Pick<Resource, 'id' | 'name'>[];
+    assignmentSources: EnumOption[];
+    assigneeStatuses: EnumOption[];
     search: string;
 }
 
@@ -132,6 +139,8 @@ function openEdit(taskAssignment: TaskAssignment) {
             :task-assignment="editingTaskAssignment"
             :tasks="tasks"
             :resources="resources"
+            :assignment-sources="assignmentSources"
+            :assignee-statuses="assigneeStatuses"
             @update:open="formOpen = $event"
         />
     </AppLayout>

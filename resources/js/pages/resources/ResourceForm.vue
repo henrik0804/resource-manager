@@ -20,11 +20,17 @@ import {
 import type { User } from '@/types';
 import type { Resource, ResourceType } from '@/types/models';
 
+interface EnumOption {
+    value: string;
+    label: string;
+}
+
 interface Props {
     open: boolean;
     resource?: Resource | null;
     resourceTypes: Pick<ResourceType, 'id' | 'name'>[];
     users: Pick<User, 'id' | 'name'>[];
+    capacityUnits: EnumOption[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -138,7 +144,11 @@ function submit() {
                     type="number"
                     min="0"
                     step="0.01"
-                    placeholder="0"
+                    :placeholder="
+                        form.capacity_unit === 'hours_per_day'
+                            ? 'z.B. 8'
+                            : 'z.B. 1'
+                    "
                     :disabled="form.processing"
                 />
                 <InputError :message="form.errors.capacity_value" />
@@ -146,15 +156,42 @@ function submit() {
 
             <div class="grid gap-2">
                 <Label for="resource-capacity-unit">Einheit</Label>
-                <Input
-                    id="resource-capacity-unit"
-                    v-model="form.capacity_unit"
-                    placeholder="z.B. Stunden/Tag"
+                <Select
+                    :model-value="form.capacity_unit ?? ''"
                     :disabled="form.processing"
-                />
+                    @update:model-value="form.capacity_unit = $event || ''"
+                >
+                    <SelectTrigger id="resource-capacity-unit">
+                        <SelectValue placeholder="Einheit wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="u in capacityUnits"
+                            :key="u.value"
+                            :value="u.value"
+                        >
+                            {{ u.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="form.errors.capacity_unit" />
             </div>
         </div>
+        <p class="-mt-1 text-xs text-muted-foreground">
+            <span v-if="form.capacity_unit === 'hours_per_day'">
+                Wie viele Stunden pro Tag steht diese Ressource zur Verfügung?
+                Beispiel: Ein Vollzeit-Mitarbeiter hat 8 Stunden/Tag.
+            </span>
+            <span v-else-if="form.capacity_unit === 'slots'">
+                Wie viele Aufgaben können gleichzeitig bearbeitet werden?
+                Beispiel: Ein Besprechungsraum hat 1 Slot (eine Besprechung
+                gleichzeitig), ein Drucker hat 1 Slot.
+            </span>
+            <span v-else>
+                Wählen Sie eine Einheit, um festzulegen, wie die Verfügbarkeit
+                dieser Ressource gemessen wird.
+            </span>
+        </p>
 
         <div class="grid gap-2">
             <Label for="resource-user">Benutzer</Label>

@@ -27,6 +27,7 @@ interface Props {
     task?: Task | null;
     priorities: EnumOption[];
     statuses: EnumOption[];
+    effortUnits: EnumOption[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -177,16 +178,33 @@ function submit() {
                 <Label for="task-effort-unit"
                     >Einheit <span class="text-destructive">*</span></Label
                 >
-                <Input
-                    id="task-effort-unit"
-                    v-model="form.effort_unit"
-                    placeholder="z.B. Stunden, Tage"
+                <Select
+                    :model-value="form.effort_unit"
                     :disabled="form.processing"
-                    required
-                />
+                    @update:model-value="form.effort_unit = $event"
+                >
+                    <SelectTrigger id="task-effort-unit">
+                        <SelectValue placeholder="Einheit wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="u in effortUnits"
+                            :key="u.value"
+                            :value="u.value"
+                        >
+                            {{ u.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <InputError :message="form.errors.effort_unit" />
             </div>
         </div>
+        <p class="-mt-1 text-xs text-muted-foreground">
+            Geschätzter Gesamtaufwand für diese Aufgabe.
+            <span v-if="form.effort_unit === 'days'">
+                1 Tag = 8 Arbeitsstunden.
+            </span>
+        </p>
 
         <div class="grid grid-cols-2 gap-4">
             <div class="grid gap-2">

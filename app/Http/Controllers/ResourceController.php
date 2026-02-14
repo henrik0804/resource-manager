@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Actions\DeleteResourceAction;
 use App\Actions\StoreResourceAction;
 use App\Actions\UpdateResourceAction;
+use App\Enums\CapacityUnit;
 use App\Exceptions\HasDependentRelationshipsException;
 use App\Http\Requests\DestroyRequest;
 use App\Http\Requests\StoreResourceRequest;
@@ -39,10 +40,17 @@ final class ResourceController
         $resourceTypes = ResourceType::query()->orderBy('name')->get(['id', 'name']);
         $users = User::query()->orderBy('name')->get(['id', 'name']);
 
+        $capacityUnits = collect(CapacityUnit::cases())
+            ->map(fn (CapacityUnit $unit) => [
+                'value' => $unit->value,
+                'label' => $unit->label(),
+            ]);
+
         return Inertia::render('resources/Index', [
             'resources' => $resources,
             'resourceTypes' => $resourceTypes,
             'users' => $users,
+            'capacityUnits' => $capacityUnits,
             'search' => $search,
         ]);
     }

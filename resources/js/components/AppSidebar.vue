@@ -30,7 +30,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { type AccessSection } from '@/lib/access-sections';
+import { AccessSections, type AccessSection } from '@/lib/access-sections';
 import { dashboard } from '@/routes';
 import { index as permissionsIndex } from '@/routes/permissions';
 import { index as qualificationsIndex } from '@/routes/qualifications';

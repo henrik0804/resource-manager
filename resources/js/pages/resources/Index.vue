@@ -15,10 +15,16 @@ import type { Paginated, Resource, ResourceType } from '@/types/models';
 
 import ResourceForm from './ResourceForm.vue';
 
+interface EnumOption {
+    value: string;
+    label: string;
+}
+
 interface Props {
     resources: Paginated<Resource>;
     resourceTypes: Pick<ResourceType, 'id' | 'name'>[];
     users: Pick<User, 'id' | 'name'>[];
+    capacityUnits: EnumOption[];
     search: string;
 }
 
@@ -105,6 +111,7 @@ function openEdit(resource: Resource) {
             :resource="editingResource"
             :resource-types="resourceTypes"
             :users="users"
+            :capacity-units="capacityUnits"
             @update:open="formOpen = $event"
         />
     </AppLayout>

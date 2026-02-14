@@ -24,6 +24,7 @@ interface Props {
     tasks: Paginated<Task>;
     priorities: EnumOption[];
     statuses: EnumOption[];
+    effortUnits: EnumOption[];
     search: string;
 }
 
@@ -122,6 +123,7 @@ function openEdit(task: Task) {
             :task="editingTask"
             :priorities="priorities"
             :statuses="statuses"
+            :effort-units="effortUnits"
             @update:open="formOpen = $event"
         />
     </AppLayout>

@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Actions\DeleteTaskAction;
 use App\Actions\StoreTaskAction;
 use App\Actions\UpdateTaskAction;
+use App\Enums\EffortUnit;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Exceptions\HasDependentRelationshipsException;
@@ -47,10 +48,17 @@ final class TaskController
                 'label' => $status->label(),
             ]);
 
+        $effortUnits = collect(EffortUnit::cases())
+            ->map(fn (EffortUnit $unit) => [
+                'value' => $unit->value,
+                'label' => $unit->label(),
+            ]);
+
         return Inertia::render('tasks/Index', [
             'tasks' => $tasks,
             'priorities' => $priorities,
             'statuses' => $statuses,
+            'effortUnits' => $effortUnits,
             'search' => $search,
         ]);
     }
