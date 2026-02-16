@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\CapacityUnit;
 use App\Models\Resource;
 use App\Models\ResourceType;
 use App\Models\User;
@@ -57,7 +58,7 @@ class ResourceSeeder extends Seeder
         Resource::query()->create([
             'name' => 'Conference Room A',
             'resource_type_id' => $roomTypeId,
-            'capacity_value' => 12,
+            'capacity_value' => 1,
             'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
@@ -65,7 +66,7 @@ class ResourceSeeder extends Seeder
         Resource::query()->create([
             'name' => 'Workshop Bay',
             'resource_type_id' => $roomTypeId,
-            'capacity_value' => 8,
+            'capacity_value' => 1,
             'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
         ]);
@@ -79,8 +80,24 @@ class ResourceSeeder extends Seeder
         ]);
 
         Resource::query()->create([
-            'name' => '3D Printer',
+            'name' => '3D Printers',
             'resource_type_id' => $equipmentTypeId,
+            'capacity_value' => 3,
+            'capacity_unit' => CapacityUnit::Slots,
+            'user_id' => null,
+        ]);
+
+        Resource::query()->create([
+            'name' => 'Projector Unit',
+            'resource_type_id' => $equipmentTypeId,
+            'capacity_value' => 1,
+            'capacity_unit' => CapacityUnit::Slots,
+            'user_id' => null,
+        ]);
+
+        Resource::query()->create([
+            'name' => 'Meeting Room B',
+            'resource_type_id' => $roomTypeId,
             'capacity_value' => 1,
             'capacity_unit' => CapacityUnit::Slots,
             'user_id' => null,
