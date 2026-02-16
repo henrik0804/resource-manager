@@ -30,6 +30,7 @@ interface GanttBar {
     ganttBarConfig: {
         id: string;
         label: string;
+        taskTitle?: string;
         style: Record<string, string>;
     };
 }
@@ -65,15 +66,15 @@ const precisionOptions = [
 ];
 
 const defaultRangeDays: Record<string, number> = {
-    day: 2,
-    week: 60,
-    month: 180,
+    day: 1,
+    week: 7,
+    month: 30,
 };
 
 const ganttPrecisionMap: Record<string, string> = {
     day: 'hour',
     week: 'day',
-    month: 'month',
+    month: 'day',
 };
 
 const ganttPrecision = computed(
@@ -156,6 +157,48 @@ watch(precision, (newPrecision) => {
 
 const chartStart = computed(() => rangeStart.value.format('YYYY-MM-DD HH:mm'));
 const chartEnd = computed(() => rangeEnd.value.format('YYYY-MM-DD HH:mm'));
+
+function formatBarTimeframe(bar: GanttBar): string {
+    const start = dayjs(bar.start);
+    const end = dayjs(bar.end);
+
+    if (start.isSame(end, 'day')) {
+        return `${start.format('DD.MM.YYYY')} ${start.format('HH:mm')} – ${end.format('HH:mm')}`;
+    }
+
+    return `${start.format('DD.MM.YYYY HH:mm')} – ${end.format('DD.MM.YYYY HH:mm')}`;
+}
+
+const displayRows = computed(() => {
+    return props.rows.map((row) => ({
+        ...row,
+        bars: row.bars.map((bar) => {
+            const taskTitle = bar.ganttBarConfig.label;
+
+            if (precision.value !== 'month') {
+                return {
+                    ...bar,
+                    ganttBarConfig: { ...bar.ganttBarConfig, taskTitle },
+                };
+            }
+
+            const start = dayjs(bar.start);
+            const end = dayjs(bar.end);
+            const dayIndicator = start.isSame(end, 'day')
+                ? start.format('D.')
+                : `${start.format('D.')}–${end.format('D.')}`;
+
+            return {
+                ...bar,
+                ganttBarConfig: {
+                    ...bar.ganttBarConfig,
+                    label: `${dayIndicator} ${taskTitle}`,
+                    taskTitle,
+                },
+            };
+        }),
+    }));
+});
 
 const hasData = computed(() => props.rows.length > 0);
 const hasAnyBars = computed(() =>
@@ -250,14 +293,23 @@ const hasAnyBars = computed(() =>
                 >
                     <template #bar-tooltip="{ bar }">
                         <div
-                            class="rounded-md bg-gray-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
+                            v-if="bar"
+                            class="rounded-md bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-lg"
                         >
-                            {{ bar.ganttBarConfig.label }}
+                            <div class="font-medium">
+                                {{
+                                    (bar.ganttBarConfig as GanttBar['ganttBarConfig']).taskTitle ??
+                                    bar.ganttBarConfig.label
+                                }}
+                            </div>
+                            <div class="mt-0.5 text-gray-400">
+                                {{ formatBarTimeframe(bar as unknown as GanttBar) }}
+                            </div>
                         </div>
                     </template>
 
                     <g-gantt-row
-                        v-for="row in rows"
+                        v-for="row in displayRows"
                         :key="row.id"
                         :label="row.label"
                         :bars="row.bars"

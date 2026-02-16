@@ -82,9 +82,9 @@ final class ScheduleController
     private function defaultRangeEnd(CarbonImmutable $start, string $precision): CarbonImmutable
     {
         return match ($precision) {
-            'day' => $start->addDays(2),
-            'week' => $start->addMonths(3),
-            'month' => $start->addYear(),
+            'day' => $start->addDay(),
+            'week' => $start->addWeek(),
+            'month' => $start->addMonth(),
         };
     }
 
