@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\MapsToTimelineBar;
 use App\Models\Resource as ResourceModel;
 use Carbon\CarbonImmutable;
 use Database\Factories\ResourceAbsenceFactory;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read CarbonImmutable|null $created_at
  * @property-read CarbonImmutable|null $updated_at
  */
-class ResourceAbsence extends Model
+class ResourceAbsence extends Model implements MapsToTimelineBar
 {
     /** @use HasFactory<ResourceAbsenceFactory> */
     use HasFactory;
@@ -52,5 +53,26 @@ class ResourceAbsence extends Model
     public function resource(): BelongsTo
     {
         return $this->belongsTo(ResourceModel::class);
+    }
+
+    /**
+     * @return array{start: string, end: string, ganttBarConfig: array{id: string, label: string, style: array<string, string>}}
+     */
+    public function toTimelineBar(): array
+    {
+        return [
+            'start' => $this->starts_at->format('Y-m-d H:i'),
+            'end' => $this->ends_at->format('Y-m-d H:i'),
+            'ganttBarConfig' => [
+                'id' => "absence-{$this->id}",
+                'label' => 'Abwesend',
+                'style' => [
+                    'background' => 'repeating-linear-gradient(45deg, #ef4444, #ef4444 10px, #dc2626 10px, #dc2626 20px)',
+                    'color' => 'white',
+                    'borderRadius' => '4px',
+                    'opacity' => '0.7',
+                ],
+            ],
+        ];
     }
 }

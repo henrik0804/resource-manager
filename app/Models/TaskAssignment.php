@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\MapsToTimelineBar;
 use App\Enums\AssigneeStatus;
 use App\Enums\AssignmentSource;
 use App\Models\Resource as ResourceModel;
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read CarbonImmutable|null $created_at
  * @property-read CarbonImmutable|null $updated_at
  */
-class TaskAssignment extends Model
+class TaskAssignment extends Model implements MapsToTimelineBar
 {
     /** @use HasFactory<TaskAssignmentFactory> */
     use HasFactory;
@@ -79,5 +80,28 @@ class TaskAssignment extends Model
         }
 
         return $this->resource()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * @return array{start: string, end: string, ganttBarConfig: array{id: string, label: string, style: array<string, string>}}
+     */
+    public function toTimelineBar(): array
+    {
+        $startsAt = $this->starts_at ?? $this->task?->starts_at;
+        $endsAt = $this->ends_at ?? $this->task?->ends_at;
+
+        return [
+            'start' => $startsAt?->format('Y-m-d H:i') ?? '',
+            'end' => $endsAt?->format('Y-m-d H:i') ?? '',
+            'ganttBarConfig' => [
+                'id' => "assignment-{$this->id}",
+                'label' => $this->task?->title ?? "Zuweisung #{$this->id}",
+                'style' => [
+                    'background' => '#3b82f6',
+                    'color' => 'white',
+                    'borderRadius' => '4px',
+                ],
+            ],
+        ];
     }
 }

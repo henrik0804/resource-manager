@@ -10,6 +10,7 @@ use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\ResourceQualificationController;
 use App\Http\Controllers\ResourceTypeController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\TaskAssignmentController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskRequirementController;
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('task-requirements', TaskRequirementController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('task-assignments', TaskAssignmentController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::post('check-conflicts', CheckConflictsController::class)->name('check-conflicts');
+    Route::get('schedule', ScheduleController::class)->name('schedule');
     Route::resource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
 });
 
