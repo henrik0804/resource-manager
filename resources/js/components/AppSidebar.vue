@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
     Boxes,
+    CalendarDays,
     CalendarOff,
     CheckSquare,
     ClipboardList,
@@ -31,7 +32,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { AccessSections, type AccessSection } from '@/lib/access-sections';
-import { dashboard } from '@/routes';
+import { dashboard, schedule } from '@/routes';
 import { index as permissionsIndex } from '@/routes/permissions';
 import { index as qualificationsIndex } from '@/routes/qualifications';
 import { index as resourceAbsencesIndex } from '@/routes/resource-absences';
@@ -138,6 +139,20 @@ const taskNavItems = computed<NavItem[]>(() => {
     return items;
 });
 
+const planningNavItems = computed<NavItem[]>(() => {
+    if (!canAccess([AccessSections.VisualOverview])) {
+        return [];
+    }
+
+    return [
+        {
+            title: 'Zeitplan',
+            href: schedule(),
+            icon: CalendarDays,
+        },
+    ];
+});
+
 const adminNavItems = computed<NavItem[]>(() => {
     if (!canAccess([AccessSections.RoleManagement])) {
         return [];
@@ -201,6 +216,11 @@ const footerNavItems: NavItem[] = [
                 v-if="taskNavItems.length"
                 :items="taskNavItems"
                 label="Aufgaben"
+            />
+            <NavMain
+                v-if="planningNavItems.length"
+                :items="planningNavItems"
+                label="Planung"
             />
             <NavMain
                 v-if="adminNavItems.length"
