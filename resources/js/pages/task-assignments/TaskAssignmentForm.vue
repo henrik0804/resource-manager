@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import CheckConflicts from '@/actions/App/Http/Controllers/CheckConflictsController';
 import {
@@ -31,7 +31,10 @@ interface Props {
     open: boolean;
     taskAssignment?: TaskAssignment | null;
     tasks: Pick<Task, 'id' | 'title'>[];
-    resources: Pick<Resource, 'id' | 'name'>[];
+    resources: Pick<
+        Resource,
+        'id' | 'name' | 'capacity_unit' | 'capacity_value'
+    >[];
     assignmentSources: EnumOption[];
     assigneeStatuses: EnumOption[];
 }
@@ -67,6 +70,78 @@ const conflictResult = ref<ConflictCheckResponse | null>(null);
 const isCheckingConflicts = ref(false);
 let conflictCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 let conflictAbortController: AbortController | null = null;
+
+const selectedResource = computed(() =>
+    props.resources.find((resource) => resource.id === form.resource_id),
+);
+
+const allocationUnit = computed(
+    () => selectedResource.value?.capacity_unit ?? null,
+);
+
+const allocationMax = computed(() => {
+    const value = selectedResource.value?.capacity_value;
+
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    const numeric = Number(value);
+
+    return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+});
+
+const allocationStep = computed(() =>
+    allocationUnit.value === 'slots' ? 1 : 0.01,
+);
+
+const allocationLabel = computed(() => {
+    if (allocationUnit.value === 'hours_per_day') {
+        return 'Auslastung (Std./Tag)';
+    }
+
+    if (allocationUnit.value === 'slots') {
+        return 'Auslastung (Slots)';
+    }
+
+    return 'Auslastung';
+});
+
+function formatQuantity(value: number): string {
+    return value % 1 === 0 ? value.toString() : value.toFixed(2);
+}
+
+const allocationPlaceholder = computed(() => {
+    if (allocationUnit.value === 'hours_per_day') {
+        return 'z.B. 4';
+    }
+
+    if (allocationUnit.value === 'slots') {
+        return 'z.B. 1';
+    }
+
+    return 'z.B. 1';
+});
+
+const allocationHint = computed(() => {
+    if (allocationUnit.value === 'hours_per_day') {
+        const max = allocationMax.value;
+
+        return max !== null
+            ? `Angabe in Stunden pro Tag (max. ${formatQuantity(max)} Std./Tag).`
+            : 'Angabe in Stunden pro Tag.';
+    }
+
+    if (allocationUnit.value === 'slots') {
+        const max = allocationMax.value;
+        const maxHint =
+            max !== null ? ` Max. ${formatQuantity(max)} Slots.` : '';
+
+        return `Angabe in parallelen Slots.${maxHint} Beispiel: 3 Drucker = 3 Slots.`;
+    }
+
+    return 'Ressource auswählen, um die Auslastungseinheit zu sehen.';
+});
 
 function canCheckConflicts(): boolean {
     if (!form.resource_id) {
@@ -282,18 +357,21 @@ function submit() {
         </div>
 
         <div class="grid gap-2">
-            <Label for="assignment-allocation">Auslastung</Label>
+            <Label for="assignment-allocation">{{ allocationLabel }}</Label>
             <Input
                 id="assignment-allocation"
                 v-model="form.allocation_ratio"
                 type="number"
                 min="0"
-                max="1"
-                step="0.01"
-                placeholder="z.B. 0.5 für 50%"
+                :max="allocationMax ?? undefined"
+                :step="allocationStep"
+                :placeholder="allocationPlaceholder"
                 :disabled="form.processing"
             />
             <InputError :message="form.errors.allocation_ratio" />
+            <p class="-mt-1 text-xs text-muted-foreground">
+                {{ allocationHint }}
+            </p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">

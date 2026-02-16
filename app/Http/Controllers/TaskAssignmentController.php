@@ -47,7 +47,12 @@ final class TaskAssignmentController
             ->withQueryString();
 
         $tasks = Task::query()->orderBy('title')->get(['id', 'title']);
-        $resources = Resource::query()->orderBy('name')->get(['id', 'name']);
+        $resources = Resource::query()->orderBy('name')->get([
+            'id',
+            'name',
+            'capacity_value',
+            'capacity_unit',
+        ]);
 
         $assignmentSources = collect(AssignmentSource::cases())
             ->map(fn (AssignmentSource $source) => [

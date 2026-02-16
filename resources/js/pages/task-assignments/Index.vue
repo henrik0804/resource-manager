@@ -24,7 +24,10 @@ interface EnumOption {
 interface Props {
     taskAssignments: Paginated<TaskAssignment>;
     tasks: Pick<Task, 'id' | 'title'>[];
-    resources: Pick<Resource, 'id' | 'name'>[];
+    resources: Pick<
+        Resource,
+        'id' | 'name' | 'capacity_unit' | 'capacity_value'
+    >[];
     assignmentSources: EnumOption[];
     assigneeStatuses: EnumOption[];
     search: string;

@@ -8,7 +8,7 @@ export interface ConflictEntry {
     description: string;
     entries: {
         related_ids: number[];
-        metrics?: Record<string, number | null>;
+        metrics?: Record<string, number | string | null>;
     }[];
 }
 
@@ -23,11 +23,59 @@ interface Props {
 
 const props = defineProps<Props>();
 
-function formatPercentage(value: number | null | undefined): string {
+const unitLabels: Record<string, string> = {
+    hours_per_day: 'Std./Tag',
+    slots: 'Slots',
+};
+
+function toNumber(value: number | string | null | undefined): number | null {
     if (value === null || value === undefined) {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+    }
+
+    const parsed = Number(value);
+
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatQuantity(value: number | string | null | undefined): string {
+    const numeric = toNumber(value);
+
+    if (numeric === null) {
         return '—';
     }
-    return `${Math.round(value * 100)}%`;
+
+    return numeric % 1 === 0 ? numeric.toString() : numeric.toFixed(2);
+}
+
+function formatUnit(value: string | number | null | undefined): string {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    return unitLabels[value] ?? value;
+}
+
+function formatAllocationSummary(conflict: ConflictEntry): string | null {
+    const metrics = conflict.entries[0]?.metrics;
+
+    if (!metrics) {
+        return null;
+    }
+
+    const allocation = formatQuantity(metrics.allocation);
+    const capacity = formatQuantity(metrics.capacity);
+    const unit = formatUnit(metrics.capacity_unit);
+
+    if (allocation === '—' || capacity === '—') {
+        return null;
+    }
+
+    return `${allocation} / ${capacity}${unit ? ` ${unit}` : ''}`;
 }
 </script>
 
@@ -46,23 +94,13 @@ function formatPercentage(value: number | null | undefined): string {
                     {{ conflict.description }}
                     <span
                         v-if="
-                            type === 'overloaded' &&
-                            conflict.entries[0]?.metrics
+                            (type === 'overloaded' ||
+                                type === 'double_booked') &&
+                            formatAllocationSummary(conflict)
                         "
                         class="text-amber-700 dark:text-amber-400"
                     >
-                        ({{
-                            formatPercentage(
-                                conflict.entries[0].metrics.allocation_ratio,
-                            )
-                        }}
-                        von
-                        {{
-                            formatPercentage(
-                                conflict.entries[0].metrics.capacity_ratio,
-                            )
-                        }}
-                        Kapazität)
+                        ({{ formatAllocationSummary(conflict) }})
                     </span>
                 </li>
             </ul>
