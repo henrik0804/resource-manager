@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import { destroy } from '@/actions/App/Http/Controllers/ResourceController';
 import type { Column } from '@/components/DataTable.vue';
@@ -28,11 +28,25 @@ interface Props {
     search: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Ressourcen', href: index().url },
 ];
+
+const capacityUnitLabels = computed(() =>
+    Object.fromEntries(
+        props.capacityUnits.map((unit) => [unit.value, unit.label]),
+    ),
+);
+
+function formatCapacityUnit(unit: string | null | undefined): string {
+    if (!unit) {
+        return '';
+    }
+
+    return capacityUnitLabels.value[unit] ?? unit;
+}
 
 const columns: Column<Resource>[] = [
     { key: 'name', label: 'Name' },
@@ -46,7 +60,7 @@ const columns: Column<Resource>[] = [
         label: 'Kapazität',
         render: (row) =>
             row.capacity_value
-                ? `${row.capacity_value} ${row.capacity_unit ?? ''}`
+                ? `${row.capacity_value} ${formatCapacityUnit(row.capacity_unit)}`
                 : '—',
     },
     {

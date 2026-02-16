@@ -147,7 +147,7 @@ function submit() {
                     :placeholder="
                         form.capacity_unit === 'hours_per_day'
                             ? 'z.B. 8'
-                            : 'z.B. 1'
+                            : 'z.B. 3'
                     "
                     :disabled="form.processing"
                 />
@@ -183,9 +183,8 @@ function submit() {
                 Beispiel: Ein Vollzeit-Mitarbeiter hat 8 Stunden/Tag.
             </span>
             <span v-else-if="form.capacity_unit === 'slots'">
-                Wie viele Aufgaben können gleichzeitig bearbeitet werden?
-                Beispiel: Ein Besprechungsraum hat 1 Slot (eine Besprechung
-                gleichzeitig), ein Drucker hat 1 Slot.
+                Wie viele parallele Slots stehen zur Verfügung? Beispiel: Ein
+                Besprechungsraum hat 1 Slot, drei 3D-Drucker ergeben 3 Slots.
             </span>
             <span v-else>
                 Wählen Sie eine Einheit, um festzulegen, wie die Verfügbarkeit
