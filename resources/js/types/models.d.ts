@@ -151,6 +151,54 @@ export interface TaskAssignment {
     [key: string]: unknown;
 }
 
+export interface AutoAssignBlockingAssignment {
+    id: number;
+    task_id: number;
+    task_title: string;
+    task_priority: TaskPriority;
+    starts_at: string | null;
+    ends_at: string | null;
+    assignment_source: AssignmentSource;
+}
+
+export interface AutoAssignSuggestionResource {
+    resource: {
+        id: number;
+        name: string;
+        utilization_percentage: number | null;
+    };
+    conflict_types: string[];
+    blocking_assignments: AutoAssignBlockingAssignment[];
+}
+
+export interface AutoAssignSuggestion {
+    task: {
+        id: number;
+        title: string;
+        priority: TaskPriority;
+        starts_at: string | null;
+        ends_at: string | null;
+    };
+    resources: AutoAssignSuggestionResource[];
+}
+
+export interface AutoAssignResponse {
+    assigned: number;
+    skipped: number;
+    suggestions: AutoAssignSuggestion[];
+}
+
+export interface ConflictResolutionResource {
+    id: number;
+    name: string;
+    capacity_value: string | null;
+    capacity_unit: CapacityUnit | null;
+}
+
+export interface ConflictResolutionResponse {
+    alternatives: ConflictResolutionResource[];
+}
+
 export interface Paginated<T> {
     data: T[];
     current_page: number;

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
-import { Plus } from 'lucide-vue-next';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { Plus, Sparkles } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
+import AutoAssign from '@/actions/App/Http/Controllers/AutoAssignController';
 import { destroy } from '@/actions/App/Http/Controllers/TaskAssignmentController';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import type { Column } from '@/components/DataTable.vue';
 import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
@@ -12,8 +14,15 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { AccessSections } from '@/lib/access-sections';
 import { index } from '@/routes/task-assignments';
 import type { AppPageProps, BreadcrumbItem } from '@/types';
-import type { Paginated, Resource, Task, TaskAssignment } from '@/types/models';
+import type {
+    AutoAssignResponse,
+    Paginated,
+    Resource,
+    Task,
+    TaskAssignment,
+} from '@/types/models';
 
+import AutoAssignResultDialog from './AutoAssignResultDialog.vue';
 import TaskAssignmentForm from './TaskAssignmentForm.vue';
 
 interface EnumOption {
@@ -43,6 +52,59 @@ const canManageAssignments = computed(() => {
 
     return permission?.can_write ?? false;
 });
+
+const canAutoAssign = computed(() => {
+    const permissions = page.props.auth?.permissions ?? {};
+    const permission = permissions[AccessSections.AutomatedAssignment];
+
+    return permission?.can_write ?? false;
+});
+
+const autoAssignDialogOpen = ref(false);
+const isAutoAssigning = ref(false);
+const autoAssignResult = ref<AutoAssignResponse | null>(null);
+const autoAssignResultOpen = ref(false);
+
+function confirmAutoAssign() {
+    autoAssignDialogOpen.value = true;
+}
+
+async function executeAutoAssign() {
+    isAutoAssigning.value = true;
+
+    try {
+        const csrfToken =
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content') ?? '';
+
+        const response = await fetch(AutoAssign.url(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+
+        if (response.ok) {
+            autoAssignResult.value =
+                (await response.json()) as AutoAssignResponse;
+            autoAssignResultOpen.value = true;
+        }
+    } finally {
+        isAutoAssigning.value = false;
+        autoAssignDialogOpen.value = false;
+    }
+}
+
+function closeAutoAssignResult(open: boolean) {
+    autoAssignResultOpen.value = open;
+
+    if (!open) {
+        router.reload();
+    }
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Aufgabenzuweisungen', href: index().url },
@@ -128,11 +190,21 @@ function openEdit(taskAssignment: TaskAssignment) {
                 delete-description="Möchten Sie diese Aufgabenzuweisung wirklich löschen?"
                 @edit="openEdit"
             >
-                <template v-if="canManageAssignments" #toolbar>
-                    <Button @click="openCreate">
-                        <Plus class="mr-2 size-4" />
-                        Zuweisung erstellen
-                    </Button>
+                <template v-if="canManageAssignments || canAutoAssign" #toolbar>
+                    <div class="flex items-center gap-2">
+                        <Button
+                            v-if="canAutoAssign"
+                            variant="secondary"
+                            @click="confirmAutoAssign"
+                        >
+                            <Sparkles class="mr-2 size-4" />
+                            Auto-Zuweisung
+                        </Button>
+                        <Button v-if="canManageAssignments" @click="openCreate">
+                            <Plus class="mr-2 size-4" />
+                            Zuweisung erstellen
+                        </Button>
+                    </div>
                 </template>
             </DataTable>
         </div>
@@ -145,6 +217,23 @@ function openEdit(taskAssignment: TaskAssignment) {
             :assignment-sources="assignmentSources"
             :assignee-statuses="assigneeStatuses"
             @update:open="formOpen = $event"
+        />
+
+        <ConfirmDialog
+            :open="autoAssignDialogOpen"
+            title="Automatische Zuweisung"
+            description="Nicht zugewiesene Aufgaben werden automatisch an verfügbare, qualifizierte Ressourcen mit der geringsten Auslastung zugewiesen. Fortfahren?"
+            confirm-label="Zuweisen"
+            variant="default"
+            :processing="isAutoAssigning"
+            @update:open="autoAssignDialogOpen = $event"
+            @confirm="executeAutoAssign"
+        />
+
+        <AutoAssignResultDialog
+            :open="autoAssignResultOpen"
+            :result="autoAssignResult"
+            @update:open="closeAutoAssignResult"
         />
     </AppLayout>
 </template>

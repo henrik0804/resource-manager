@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AutoAssignController;
 use App\Http\Controllers\CheckConflictsController;
+use App\Http\Controllers\ConflictResolutionController;
 use App\Http\Controllers\MyAssignmentController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\QualificationController;
@@ -38,9 +40,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('tasks', TaskController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('task-requirements', TaskRequirementController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('task-assignments', TaskAssignmentController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::post('task-assignments/auto-assign', AutoAssignController::class)->name('task-assignments.auto-assign');
     Route::get('my-assignments', [MyAssignmentController::class, 'index'])->name('my-assignments.index');
     Route::put('my-assignments/{my_assignment}', [MyAssignmentController::class, 'update'])->name('my-assignments.update');
     Route::post('check-conflicts', CheckConflictsController::class)->name('check-conflicts');
+    Route::post('conflict-resolution', ConflictResolutionController::class)->name('conflict-resolution');
     Route::get('schedule', ScheduleController::class)->name('schedule');
     Route::get('utilization', UtilizationController::class)->name('utilization');
     Route::resource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
