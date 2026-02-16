@@ -13,7 +13,7 @@ enum CapacityUnit: string
     {
         return match ($this) {
             self::HoursPerDay => 'Stunden/Tag',
-            self::Slots => 'Slots',
+            self::Slots => 'Slots (parallel)',
         };
     }
 }

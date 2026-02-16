@@ -44,14 +44,14 @@ test('check-conflicts detects double booking', function (): void {
         'resource_id' => $resource->id,
         'starts_at' => CarbonImmutable::parse('2026-03-01'),
         'ends_at' => CarbonImmutable::parse('2026-03-05'),
-        'allocation_ratio' => 0.3,
+        'allocation_ratio' => 0.6,
     ]);
 
     postJson(route('check-conflicts'), [
         'resource_id' => $resource->id,
         'starts_at' => '2026-03-03',
         'ends_at' => '2026-03-07',
-        'allocation_ratio' => 0.3,
+        'allocation_ratio' => 0.6,
     ])
         ->assertSuccessful()
         ->assertJson([
@@ -66,18 +66,11 @@ test('check-conflicts detects overload', function (): void {
         'capacity_unit' => 'hours_per_day',
     ]);
 
-    TaskAssignment::factory()->create([
-        'resource_id' => $resource->id,
-        'starts_at' => CarbonImmutable::parse('2026-03-01'),
-        'ends_at' => CarbonImmutable::parse('2026-03-05'),
-        'allocation_ratio' => 0.6,
-    ]);
-
     postJson(route('check-conflicts'), [
         'resource_id' => $resource->id,
         'starts_at' => '2026-03-02',
         'ends_at' => '2026-03-04',
-        'allocation_ratio' => 0.6,
+        'allocation_ratio' => 1.4,
     ])
         ->assertSuccessful()
         ->assertJson([

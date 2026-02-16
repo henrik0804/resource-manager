@@ -31,23 +31,30 @@ final class ConflictDetectionService
         $report = new ConflictReport;
         $overlappingAssignments = $this->overlappingAssignments($resource, $windowStartsAt, $windowEndsAt, $excludeAssignmentId);
 
-        if ($overlappingAssignments->isNotEmpty()) {
-            $report->add(ConflictType::DoubleBooked, [
-                'related_ids' => $overlappingAssignments->pluck('id')->all(),
-            ]);
-        }
-
         $capacity = $this->resolveCapacity($resource);
         $requestedAllocation = $this->normalizeRatio($allocationRatio);
         $existingAllocation = $overlappingAssignments->sum(fn (TaskAssignment $assignment): float => $this->normalizeRatio($assignment->allocation_ratio));
 
         $totalAllocation = $requestedAllocation + $existingAllocation;
 
-        if ($totalAllocation > $capacity) {
+        if ($overlappingAssignments->isNotEmpty() && $totalAllocation > $capacity) {
+            $report->add(ConflictType::DoubleBooked, [
+                'related_ids' => $overlappingAssignments->pluck('id')->all(),
+                'metrics' => [
+                    'allocation' => $totalAllocation,
+                    'capacity' => $capacity,
+                    'capacity_unit' => $resource->capacity_unit?->value,
+                    'existing_allocation' => $existingAllocation,
+                    'requested_allocation' => $requestedAllocation,
+                ],
+            ]);
+        }
+
+        if ($requestedAllocation > $capacity) {
             $report->add(ConflictType::Overloaded, [
                 'related_ids' => $overlappingAssignments->pluck('id')->all(),
                 'metrics' => [
-                    'total_allocation' => $totalAllocation,
+                    'allocation' => $requestedAllocation,
                     'capacity' => $capacity,
                     'capacity_unit' => $resource->capacity_unit?->value,
                 ],

@@ -22,8 +22,8 @@ enum ConflictType: string
     public function description(): string
     {
         return match ($this) {
-            self::DoubleBooked => 'Die Ressource ist in diesem Zeitraum bereits einer anderen Aufgabe zugewiesen.',
-            self::Overloaded => 'Die Gesamtauslastung der Ressource übersteigt die verfügbare Kapazität.',
+            self::DoubleBooked => 'Die parallele Belegung überschreitet die verfügbare Kapazität der Ressource.',
+            self::Overloaded => 'Die angegebene Auslastung überschreitet die Kapazität der Ressource.',
             self::Unavailable => 'Die Ressource ist in diesem Zeitraum als abwesend eingetragen.',
         };
     }
