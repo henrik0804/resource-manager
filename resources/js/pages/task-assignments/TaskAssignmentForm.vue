@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
 import CheckConflicts from '@/actions/App/Http/Controllers/CheckConflictsController';
+import ConflictResolution from '@/actions/App/Http/Controllers/ConflictResolutionController';
 import {
     store,
     update,
@@ -11,6 +12,7 @@ import type { ConflictCheckResponse } from '@/components/ConflictAlert.vue';
 import ConflictAlert from '@/components/ConflictAlert.vue';
 import FormDialog from '@/components/FormDialog.vue';
 import InputError from '@/components/InputError.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -20,7 +22,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import type { Resource, Task, TaskAssignment } from '@/types/models';
+import type {
+    ConflictResolutionResource,
+    ConflictResolutionResponse,
+    Resource,
+    Task,
+    TaskAssignment,
+} from '@/types/models';
 
 interface EnumOption {
     value: string;
@@ -70,6 +78,9 @@ const conflictResult = ref<ConflictCheckResponse | null>(null);
 const isCheckingConflicts = ref(false);
 let conflictCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 let conflictAbortController: AbortController | null = null;
+const alternativeResources = ref<ConflictResolutionResource[]>([]);
+const isLoadingAlternatives = ref(false);
+let alternativesAbortController: AbortController | null = null;
 
 const selectedResource = computed(() =>
     props.resources.find((resource) => resource.id === form.resource_id),
@@ -109,6 +120,27 @@ const allocationLabel = computed(() => {
 
 function formatQuantity(value: number): string {
     return value % 1 === 0 ? value.toString() : value.toFixed(2);
+}
+
+function formatCapacity(resource: ConflictResolutionResource): string | null {
+    if (resource.capacity_value === null || resource.capacity_unit === null) {
+        return null;
+    }
+
+    const numeric = Number(resource.capacity_value);
+    const value = Number.isFinite(numeric)
+        ? formatQuantity(numeric)
+        : resource.capacity_value;
+
+    if (resource.capacity_unit === 'hours_per_day') {
+        return `${value} Std./Tag`;
+    }
+
+    if (resource.capacity_unit === 'slots') {
+        return `${value} Slots`;
+    }
+
+    return value.toString();
 }
 
 const allocationPlaceholder = computed(() => {
@@ -154,9 +186,66 @@ function canCheckConflicts(): boolean {
     return hasAssignmentDates || hasTaskId;
 }
 
+function resolveCsrfToken(): string {
+    return (
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content') ?? ''
+    );
+}
+
+async function loadAlternatives(): Promise<void> {
+    if (!canCheckConflicts()) {
+        alternativeResources.value = [];
+        alternativesAbortController?.abort();
+
+        return;
+    }
+
+    alternativesAbortController?.abort();
+    alternativesAbortController = new AbortController();
+
+    isLoadingAlternatives.value = true;
+    alternativeResources.value = [];
+
+    try {
+        const response = await fetch(ConflictResolution.url(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': resolveCsrfToken(),
+            },
+            signal: alternativesAbortController.signal,
+            body: JSON.stringify({
+                current_resource_id: form.resource_id,
+                task_id: form.task_id,
+                starts_at: form.starts_at || null,
+                ends_at: form.ends_at || null,
+                allocation_ratio: form.allocation_ratio || null,
+                exclude_assignment_id: props.taskAssignment?.id ?? null,
+            }),
+        });
+
+        if (response.ok) {
+            const payload =
+                (await response.json()) as ConflictResolutionResponse;
+            alternativeResources.value = payload.alternatives ?? [];
+        }
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+            return;
+        }
+    } finally {
+        isLoadingAlternatives.value = false;
+    }
+}
+
 async function checkConflicts(): Promise<void> {
     if (!canCheckConflicts()) {
         conflictResult.value = null;
+        alternativeResources.value = [];
+        alternativesAbortController?.abort();
 
         return;
     }
@@ -167,17 +256,12 @@ async function checkConflicts(): Promise<void> {
     isCheckingConflicts.value = true;
 
     try {
-        const csrfToken =
-            document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content') ?? '';
-
         const response = await fetch(CheckConflicts.url(), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
+                'X-CSRF-TOKEN': resolveCsrfToken(),
             },
             signal: conflictAbortController.signal,
             body: JSON.stringify({
@@ -193,6 +277,15 @@ async function checkConflicts(): Promise<void> {
         if (response.ok) {
             conflictResult.value =
                 (await response.json()) as ConflictCheckResponse;
+
+            if (conflictResult.value.has_conflicts) {
+                await loadAlternatives();
+            } else {
+                alternativeResources.value = [];
+            }
+        } else {
+            conflictResult.value = null;
+            alternativeResources.value = [];
         }
     } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -243,6 +336,9 @@ watch(
             conflictResult.value = null;
             isCheckingConflicts.value = false;
             conflictAbortController?.abort();
+            alternativeResources.value = [];
+            isLoadingAlternatives.value = false;
+            alternativesAbortController?.abort();
 
             if (conflictCheckTimeout) {
                 clearTimeout(conflictCheckTimeout);
@@ -250,6 +346,11 @@ watch(
         }
     },
 );
+
+function applyAlternative(resourceId: number): void {
+    form.resource_id = resourceId;
+    scheduleConflictCheck();
+}
 
 function submit() {
     const action = isEditing() ? update(props.taskAssignment!.id) : store();
@@ -428,5 +529,60 @@ function submit() {
             v-if="conflictResult?.has_conflicts"
             :conflicts="conflictResult.conflicts"
         />
+
+        <div v-if="conflictResult?.has_conflicts" class="space-y-2">
+            <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                    <p class="text-sm font-medium">Alternative Ressourcen</p>
+                    <p class="text-xs text-muted-foreground">
+                        Sortiert nach geringster Auslastung.
+                    </p>
+                </div>
+                <span
+                    v-if="isLoadingAlternatives"
+                    class="text-xs text-muted-foreground"
+                >
+                    Suche…
+                </span>
+            </div>
+
+            <p
+                v-if="
+                    !isLoadingAlternatives && alternativeResources.length === 0
+                "
+                class="text-xs text-muted-foreground"
+            >
+                Keine passenden Alternativen gefunden.
+            </p>
+
+            <div v-else class="grid gap-2">
+                <div
+                    v-for="alternative in alternativeResources"
+                    :key="alternative.id"
+                    class="flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2"
+                >
+                    <div class="grid">
+                        <span class="text-sm font-medium">
+                            {{ alternative.name }}
+                        </span>
+                        <span
+                            v-if="formatCapacity(alternative)"
+                            class="text-xs text-muted-foreground"
+                        >
+                            Kapazität: {{ formatCapacity(alternative) }}
+                        </span>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        :disabled="form.processing"
+                        @click="applyAlternative(alternative.id)"
+                    >
+                        Übernehmen
+                    </Button>
+                </div>
+            </div>
+        </div>
     </FormDialog>
 </template>
