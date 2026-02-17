@@ -71,15 +71,26 @@ function priorityBadgeVariant(
     return 'secondary';
 }
 
-function formatDate(dateString: string | null): string {
+function formatDateTime(dateString: string | null): string {
     if (!dateString) {
         return '--';
     }
 
-    return new Date(dateString).toLocaleDateString('de-DE', {
+    const normalized = dateString.includes('T')
+        ? dateString
+        : dateString.replace(' ', 'T');
+    const parsed = new Date(normalized);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return '--';
+    }
+
+    return parsed.toLocaleString('de-DE', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 
@@ -96,7 +107,7 @@ function formatPeriod(start: string | null, end: string | null): string {
         return '--';
     }
 
-    return `${formatDate(start)} – ${formatDate(end)}`;
+    return `${formatDateTime(start)} – ${formatDateTime(end)}`;
 }
 
 function hasSuggestions(result: AutoAssignResponse): boolean {
@@ -268,9 +279,15 @@ function suggestionSummary(suggestion: AutoAssignSuggestion): string {
                                     }}
                                 </Badge>
                                 <span class="text-xs text-muted-foreground">
-                                    {{ formatDate(suggestion.task.starts_at) }}
+                                    {{
+                                        formatDateTime(
+                                            suggestion.task.starts_at,
+                                        )
+                                    }}
                                     –
-                                    {{ formatDate(suggestion.task.ends_at) }}
+                                    {{
+                                        formatDateTime(suggestion.task.ends_at)
+                                    }}
                                 </span>
                             </div>
 
@@ -360,13 +377,15 @@ function suggestionSummary(suggestion: AutoAssignSuggestion): string {
                                             </Badge>
                                             <span>
                                                 {{
-                                                    formatDate(
+                                                    formatDateTime(
                                                         blocking.starts_at,
                                                     )
                                                 }}
                                                 –
                                                 {{
-                                                    formatDate(blocking.ends_at)
+                                                    formatDateTime(
+                                                        blocking.ends_at,
+                                                    )
                                                 }}
                                             </span>
                                         </div>

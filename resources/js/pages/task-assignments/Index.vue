@@ -125,15 +125,26 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Aufgabenzuweisungen', href: index().url },
 ];
 
-function formatDate(dateString: string | null): string {
+function formatDateTime(dateString: string | null): string {
     if (!dateString) {
         return '—';
     }
 
-    return new Date(dateString).toLocaleDateString('de-DE', {
+    const normalized = dateString.includes('T')
+        ? dateString
+        : dateString.replace(' ', 'T');
+    const parsed = new Date(normalized);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return '—';
+    }
+
+    return parsed.toLocaleString('de-DE', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 
@@ -159,12 +170,12 @@ const columns: Column<TaskAssignment>[] = [
     {
         key: 'starts_at',
         label: 'Beginn',
-        render: (row) => formatDate(row.starts_at),
+        render: (row) => formatDateTime(row.starts_at),
     },
     {
         key: 'ends_at',
         label: 'Ende',
-        render: (row) => formatDate(row.ends_at),
+        render: (row) => formatDateTime(row.ends_at),
     },
     {
         key: 'assignment_source',

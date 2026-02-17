@@ -68,10 +68,21 @@ function formatDate(dateString: string | null): string {
         return '\u2014';
     }
 
-    return new Date(dateString).toLocaleDateString('de-DE', {
+    const normalized = dateString.includes('T')
+        ? dateString
+        : dateString.replace(' ', 'T');
+    const parsed = new Date(normalized);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return '\u2014';
+    }
+
+    return parsed.toLocaleString('de-DE', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 

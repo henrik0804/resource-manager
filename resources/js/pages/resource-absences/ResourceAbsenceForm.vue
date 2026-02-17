@@ -35,8 +35,18 @@ const emit = defineEmits<{
 
 const isEditing = () => props.resourceAbsence !== null;
 
-function formatDateForInput(dateString: string): string {
-    return dateString.substring(0, 10);
+function formatDateTimeForInput(dateString: string): string {
+    const match = dateString.match(
+        /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}):(\d{2}))?/,
+    );
+
+    if (!match) {
+        return '';
+    }
+
+    const [, date, hour, minute] = match;
+
+    return `${date}T${hour ?? '00'}:${minute ?? '00'}`;
 }
 
 const form = useForm({
@@ -51,10 +61,12 @@ watch(
     (open) => {
         if (open && props.resourceAbsence) {
             form.resource_id = props.resourceAbsence.resource_id;
-            form.starts_at = formatDateForInput(
+            form.starts_at = formatDateTimeForInput(
                 props.resourceAbsence.starts_at,
             );
-            form.ends_at = formatDateForInput(props.resourceAbsence.ends_at);
+            form.ends_at = formatDateTimeForInput(
+                props.resourceAbsence.ends_at,
+            );
             form.recurrence_rule = props.resourceAbsence.recurrence_rule ?? '';
         } else if (open) {
             form.reset();
@@ -127,7 +139,7 @@ function submit() {
                 <Input
                     id="absence-starts-at"
                     v-model="form.starts_at"
-                    type="date"
+                    type="datetime-local"
                     :disabled="form.processing"
                     required
                 />
@@ -141,7 +153,7 @@ function submit() {
                 <Input
                     id="absence-ends-at"
                     v-model="form.ends_at"
-                    type="date"
+                    type="datetime-local"
                     :disabled="form.processing"
                     required
                 />

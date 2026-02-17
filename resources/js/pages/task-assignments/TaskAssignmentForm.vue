@@ -58,11 +58,35 @@ const emit = defineEmits<{
 
 const isEditing = () => props.taskAssignment !== null;
 
-function formatDateForInput(dateString: string | null): string {
+function formatDateTimeForInput(dateString: string | null): string {
     if (!dateString) {
         return '';
     }
-    return dateString.substring(0, 10);
+
+    const match = dateString.match(
+        /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}):(\d{2}))?/,
+    );
+
+    if (!match) {
+        return '';
+    }
+
+    const [, date, hour, minute] = match;
+
+    return `${date}T${hour ?? '00'}:${minute ?? '00'}`;
+}
+
+function toDate(dateString: string | null): Date | null {
+    if (!dateString) {
+        return null;
+    }
+
+    const normalized = dateString.includes('T')
+        ? dateString
+        : dateString.replace(' ', 'T');
+    const parsed = new Date(normalized);
+
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 const form = useForm({
@@ -145,20 +169,24 @@ function formatCapacity(resource: ConflictResolutionResource): string | null {
     return value.toString();
 }
 
-function formatDate(dateString: string | null): string {
-    if (!dateString) {
+function formatDateTime(dateString: string | null): string {
+    const date = toDate(dateString);
+
+    if (!date) {
         return '—';
     }
 
-    return new Date(dateString).toLocaleDateString('de-DE', {
+    return date.toLocaleString('de-DE', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 
 function formatPeriod(period: ConflictResolutionPeriod): string {
-    return `${formatDate(period.starts_at)} – ${formatDate(period.ends_at)}`;
+    return `${formatDateTime(period.starts_at)} – ${formatDateTime(period.ends_at)}`;
 }
 
 const allocationPlaceholder = computed(() => {
@@ -346,8 +374,10 @@ watch(
         if (open && props.taskAssignment) {
             form.task_id = props.taskAssignment.task_id;
             form.resource_id = props.taskAssignment.resource_id;
-            form.starts_at = formatDateForInput(props.taskAssignment.starts_at);
-            form.ends_at = formatDateForInput(props.taskAssignment.ends_at);
+            form.starts_at = formatDateTimeForInput(
+                props.taskAssignment.starts_at,
+            );
+            form.ends_at = formatDateTimeForInput(props.taskAssignment.ends_at);
             form.allocation_ratio = props.taskAssignment.allocation_ratio ?? '';
             form.assignment_source = props.taskAssignment.assignment_source;
             form.assignee_status = props.taskAssignment.assignee_status ?? '';
@@ -379,8 +409,8 @@ function applyAlternative(resourceId: number): void {
 }
 
 function applyAlternativePeriod(period: ConflictResolutionPeriod): void {
-    form.starts_at = period.starts_at.substring(0, 10);
-    form.ends_at = period.ends_at.substring(0, 10);
+    form.starts_at = formatDateTimeForInput(period.starts_at);
+    form.ends_at = formatDateTimeForInput(period.ends_at);
     scheduleConflictCheck();
 }
 
@@ -471,7 +501,7 @@ function submit() {
                 <Input
                     id="assignment-starts-at"
                     v-model="form.starts_at"
-                    type="date"
+                    type="datetime-local"
                     :disabled="form.processing"
                 />
                 <InputError :message="form.errors.starts_at" />
@@ -482,7 +512,7 @@ function submit() {
                 <Input
                     id="assignment-ends-at"
                     v-model="form.ends_at"
-                    type="date"
+                    type="datetime-local"
                     :disabled="form.processing"
                 />
                 <InputError :message="form.errors.ends_at" />

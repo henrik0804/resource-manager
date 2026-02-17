@@ -57,8 +57,8 @@ final readonly class ConflictResolutionService
 
             if (! $report->hasConflicts()) {
                 $alternatives->push([
-                    'starts_at' => $candidateStart->toDateString(),
-                    'ends_at' => $candidateEnd->toDateString(),
+                    'starts_at' => $candidateStart->toDateTimeString(),
+                    'ends_at' => $candidateEnd->toDateTimeString(),
                 ]);
             }
 
