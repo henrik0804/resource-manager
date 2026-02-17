@@ -44,14 +44,17 @@ class TaskAssignmentSeeder extends Seeder
          * Each entry is either a person assignment (`person` index into $persons)
          * or a named resource (`name` matching the resource name).
          *
+         * Some tasks have NO assignments - these can be used to test auto-assignment.
+         *
          * Optional keys:
          *   - ratio: allocation_ratio (default 1.0)
          *   - from:  day offset from task start (default 0)
          *   - to:    day offset from task start (omit for full duration)
          *
-         * @var array<string, list<array{person?: int, name?: string, ratio?: float, from?: int, to?: int}>>
+         * @var array<string, list<array{person?: int, name?: string, ratio?: float, from?: int, to?: int}>|null>
          */
         $plans = [
+            // Fully assigned - for testing manual assignment
             'Büroflügel Renovierung' => [
                 ['person' => 0, 'ratio' => 0.50],
                 ['person' => 1],
@@ -59,6 +62,7 @@ class TaskAssignmentSeeder extends Seeder
                 ['name' => 'Werkstattbereich'],
                 ['name' => 'Gabelstapler #2', 'to' => 2],
             ],
+            // Fully assigned
             'Produktversion 3.0 Start sprint' => [
                 ['person' => 0, 'ratio' => 0.50],
                 ['person' => 3],
@@ -67,6 +71,7 @@ class TaskAssignmentSeeder extends Seeder
                 ['name' => 'Entwicklungsteam', 'to' => 3],
                 ['name' => 'Konferenzraum A', 'to' => 1],
             ],
+            // Fully assigned
             'Jährliche Sicherheitsprüfung' => [
                 ['person' => 0],
                 ['person' => 2, 'ratio' => 0.50],
@@ -74,12 +79,14 @@ class TaskAssignmentSeeder extends Seeder
                 ['name' => 'Werkstattbereich', 'from' => 1],
                 ['name' => 'Gabelstapler #2', 'from' => 1, 'to' => 1],
             ],
+            // Fully assigned
             'Kunden-Workshop — Meridian Corp' => [
                 ['person' => 1],
                 ['person' => 0, 'ratio' => 0.50],
                 ['name' => 'Konferenzraum A'],
                 ['name' => 'Beamer'],
             ],
+            // Fully assigned
             'Lagerbestands-Ausgleich' => [
                 ['person' => 2],
                 ['person' => 3, 'to' => 1],
@@ -88,33 +95,25 @@ class TaskAssignmentSeeder extends Seeder
                 ['name' => 'Gabelstapler #2'],
                 ['name' => 'Werkstattbereich'],
             ],
-            'Einarbeitung neue Mitarbeiter — Q1 Kohorte' => [
-                ['person' => 0, 'ratio' => 0.50],
-                ['person' => 4, 'ratio' => 0.25, 'from' => 1],
-                ['name' => 'Konferenzraum A', 'to' => 2],
-                ['name' => 'Besprechungsraum B', 'from' => 3],
-                ['name' => 'Betriebsteam', 'from' => 3, 'to' => 3],
-            ],
-            'Messestand Fertigung' => [
-                ['person' => 1],
-                ['person' => 5, 'ratio' => 0.75],
-                ['person' => 4, 'ratio' => 0.50, 'from' => 3],
-                ['name' => 'Entwicklungsteam'],
-                ['name' => '3D-Drucker', 'from' => 1, 'to' => 4],
-                ['name' => 'Werkstattbereich', 'from' => 3],
-            ],
+            // NO ASSIGNMENTS - test auto-assignment
+            'Einarbeitung neue Mitarbeiter — Q1 Kohorte' => null,
+            // NO ASSIGNMENTS - test auto-assignment
+            'Messestand Fertigung' => null,
+            // Fully assigned
             'IT-Infrastruktur Migration' => [
                 ['person' => 3],
                 ['person' => 4],
                 ['person' => 2, 'from' => 4],
                 ['name' => 'Betriebsteam'],
             ],
+            // DONE - limited assignment for historical testing
             'Quartalsreview Vorbereitung' => [
                 ['person' => 0, 'ratio' => 0.50],
                 ['person' => 1, 'ratio' => 0.50],
                 ['name' => 'Konferenzraum A', 'from' => 1],
                 ['name' => 'Beamer', 'from' => 1],
             ],
+            // Fully assigned
             'Wartungsfenster Ausstattung' => [
                 ['person' => 2],
                 ['person' => 5, 'ratio' => 0.50, 'to' => 1],
@@ -122,13 +121,9 @@ class TaskAssignmentSeeder extends Seeder
                 ['name' => '3D-Drucker'],
                 ['name' => 'Werkstattbereich'],
             ],
-            'Prozessoptimierung Team-übergreifend' => [
-                ['person' => 0, 'ratio' => 0.75],
-                ['person' => 1, 'ratio' => 0.50],
-                ['name' => 'Entwicklungsteam', 'to' => 1],
-                ['name' => 'Betriebsteam', 'from' => 2],
-                ['name' => 'Konferenzraum A'],
-            ],
+            // NO ASSIGNMENTS - test auto-assignment
+            'Prozessoptimierung Team-übergreifend' => null,
+            // DONE - limited assignment for historical testing
             'Notfallübung Koordination' => [
                 ['person' => 0],
                 ['person' => 2],
@@ -142,6 +137,11 @@ class TaskAssignmentSeeder extends Seeder
             $task = $tasks->get($taskTitle);
 
             if (! $task) {
+                continue;
+            }
+
+            // Skip tasks with no assignments (for testing auto-assignment)
+            if ($entries === null) {
                 continue;
             }
 
