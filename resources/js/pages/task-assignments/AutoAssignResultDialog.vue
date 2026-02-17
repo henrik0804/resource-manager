@@ -103,6 +103,15 @@ function hasSuggestions(result: AutoAssignResponse): boolean {
     return result.suggestions.length > 0;
 }
 
+function hasNoWorkToDo(result: AutoAssignResponse): boolean {
+    return (
+        result.assigned === 0 &&
+        result.skipped === 0 &&
+        (result.rescheduled?.length ?? 0) === 0 &&
+        result.suggestions.length === 0
+    );
+}
+
 function suggestionSummary(suggestion: AutoAssignSuggestion): string {
     const count = suggestion.resources.length;
     const noun = count === 1 ? 'Ressource' : 'Ressourcen';
@@ -122,7 +131,19 @@ function suggestionSummary(suggestion: AutoAssignSuggestion): string {
             </DialogHeader>
 
             <div v-if="result" class="space-y-4">
-                <div class="flex flex-wrap gap-4">
+                <div
+                    v-if="hasNoWorkToDo(result)"
+                    class="flex items-center gap-3 rounded-md border border-dashed p-4"
+                >
+                    <CheckCircle
+                        class="size-5 text-emerald-600 dark:text-emerald-400"
+                    />
+                    <p class="text-sm text-muted-foreground">
+                        Alle Aufgaben sind bereits zugewiesen.
+                    </p>
+                </div>
+
+                <div v-else class="flex flex-wrap gap-4">
                     <div
                         class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
                     >
