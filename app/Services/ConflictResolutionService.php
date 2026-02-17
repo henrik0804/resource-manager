@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Resource;
 use App\Models\Task;
 use App\Models\TaskRequirement;
+use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -17,6 +18,55 @@ final class ConflictResolutionService
         private ConflictDetectionService $conflictDetection,
         private UtilizationService $utilizationService,
     ) {}
+
+    /**
+     * @return Collection<int, array{starts_at: string, ends_at: string}>
+     */
+    public function alternativePeriods(
+        Resource $resource,
+        DateTimeInterface $startsAt,
+        DateTimeInterface $endsAt,
+        float|int|string|null $allocationRatio = null,
+        ?int $excludeAssignmentId = null,
+        int $maxAlternatives = 3,
+        int $searchWindowDays = 30,
+    ): Collection {
+        $start = $this->toCarbon($startsAt);
+        $end = $this->toCarbon($endsAt);
+        $durationMinutes = $start->diffInMinutes($end, false);
+
+        if ($durationMinutes <= 0 || $maxAlternatives <= 0) {
+            return collect();
+        }
+
+        $alternatives = collect();
+        $offset = 1;
+        $maxOffset = max($searchWindowDays, 1);
+
+        while ($offset <= $maxOffset && $alternatives->count() < $maxAlternatives) {
+            $candidateStart = $start->addDays($offset);
+            $candidateEnd = $candidateStart->addMinutes($durationMinutes);
+
+            $report = $this->conflictDetection->detect(
+                resource: $resource,
+                startsAt: $candidateStart,
+                endsAt: $candidateEnd,
+                allocationRatio: $allocationRatio,
+                excludeAssignmentId: $excludeAssignmentId,
+            );
+
+            if (! $report->hasConflicts()) {
+                $alternatives->push([
+                    'starts_at' => $candidateStart->toDateString(),
+                    'ends_at' => $candidateEnd->toDateString(),
+                ]);
+            }
+
+            $offset++;
+        }
+
+        return $alternatives;
+    }
 
     /**
      * @return Collection<int, \App\Models\Resource>
@@ -106,5 +156,14 @@ final class ConflictResolutionService
                 $resource['id'] => (float) $resource['summary']['utilization_percentage'],
             ])
             ->all();
+    }
+
+    private function toCarbon(DateTimeInterface $dateTime): CarbonImmutable
+    {
+        if ($dateTime instanceof CarbonImmutable) {
+            return $dateTime;
+        }
+
+        return CarbonImmutable::instance($dateTime);
     }
 }

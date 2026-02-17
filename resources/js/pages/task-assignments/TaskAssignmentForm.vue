@@ -23,6 +23,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import type {
+    ConflictResolutionPeriod,
     ConflictResolutionResource,
     ConflictResolutionResponse,
     Resource,
@@ -79,6 +80,7 @@ const isCheckingConflicts = ref(false);
 let conflictCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 let conflictAbortController: AbortController | null = null;
 const alternativeResources = ref<ConflictResolutionResource[]>([]);
+const alternativePeriods = ref<ConflictResolutionPeriod[]>([]);
 const isLoadingAlternatives = ref(false);
 let alternativesAbortController: AbortController | null = null;
 
@@ -143,6 +145,22 @@ function formatCapacity(resource: ConflictResolutionResource): string | null {
     return value.toString();
 }
 
+function formatDate(dateString: string | null): string {
+    if (!dateString) {
+        return '—';
+    }
+
+    return new Date(dateString).toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
+}
+
+function formatPeriod(period: ConflictResolutionPeriod): string {
+    return `${formatDate(period.starts_at)} – ${formatDate(period.ends_at)}`;
+}
+
 const allocationPlaceholder = computed(() => {
     if (allocationUnit.value === 'hours_per_day') {
         return 'z.B. 4';
@@ -197,6 +215,7 @@ function resolveCsrfToken(): string {
 async function loadAlternatives(): Promise<void> {
     if (!canCheckConflicts()) {
         alternativeResources.value = [];
+        alternativePeriods.value = [];
         alternativesAbortController?.abort();
 
         return;
@@ -207,6 +226,7 @@ async function loadAlternatives(): Promise<void> {
 
     isLoadingAlternatives.value = true;
     alternativeResources.value = [];
+    alternativePeriods.value = [];
 
     try {
         const response = await fetch(ConflictResolution.url(), {
@@ -231,6 +251,7 @@ async function loadAlternatives(): Promise<void> {
             const payload =
                 (await response.json()) as ConflictResolutionResponse;
             alternativeResources.value = payload.alternatives ?? [];
+            alternativePeriods.value = payload.alternative_periods ?? [];
         }
     } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -245,6 +266,7 @@ async function checkConflicts(): Promise<void> {
     if (!canCheckConflicts()) {
         conflictResult.value = null;
         alternativeResources.value = [];
+        alternativePeriods.value = [];
         alternativesAbortController?.abort();
 
         return;
@@ -282,10 +304,12 @@ async function checkConflicts(): Promise<void> {
                 await loadAlternatives();
             } else {
                 alternativeResources.value = [];
+                alternativePeriods.value = [];
             }
         } else {
             conflictResult.value = null;
             alternativeResources.value = [];
+            alternativePeriods.value = [];
         }
     } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -330,6 +354,7 @@ watch(
         } else if (open) {
             form.reset();
             form.clearErrors();
+            form.assignment_source = 'manual';
         }
 
         if (!open) {
@@ -337,6 +362,7 @@ watch(
             isCheckingConflicts.value = false;
             conflictAbortController?.abort();
             alternativeResources.value = [];
+            alternativePeriods.value = [];
             isLoadingAlternatives.value = false;
             alternativesAbortController?.abort();
 
@@ -349,6 +375,12 @@ watch(
 
 function applyAlternative(resourceId: number): void {
     form.resource_id = resourceId;
+    scheduleConflictCheck();
+}
+
+function applyAlternativePeriod(period: ConflictResolutionPeriod): void {
+    form.starts_at = period.starts_at.substring(0, 10);
+    form.ends_at = period.ends_at.substring(0, 10);
     scheduleConflictCheck();
 }
 
@@ -578,6 +610,53 @@ function submit() {
                         size="sm"
                         :disabled="form.processing"
                         @click="applyAlternative(alternative.id)"
+                    >
+                        Übernehmen
+                    </Button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="conflictResult?.has_conflicts" class="space-y-2">
+            <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                    <p class="text-sm font-medium">Alternative Zeiträume</p>
+                    <p class="text-xs text-muted-foreground">
+                        Gleiche Dauer, nächste verfügbare Zeitfenster.
+                    </p>
+                </div>
+                <span
+                    v-if="isLoadingAlternatives"
+                    class="text-xs text-muted-foreground"
+                >
+                    Suche…
+                </span>
+            </div>
+
+            <p
+                v-if="!isLoadingAlternatives && alternativePeriods.length === 0"
+                class="text-xs text-muted-foreground"
+            >
+                Keine alternativen Zeiträume gefunden.
+            </p>
+
+            <div v-else class="grid gap-2">
+                <div
+                    v-for="period in alternativePeriods"
+                    :key="`${period.starts_at}-${period.ends_at}`"
+                    class="flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2"
+                >
+                    <div class="grid">
+                        <span class="text-sm font-medium">
+                            {{ formatPeriod(period) }}
+                        </span>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        :disabled="form.processing"
+                        @click="applyAlternativePeriod(period)"
                     >
                         Übernehmen
                     </Button>

@@ -135,3 +135,26 @@ test('conflict-resolution requires ManualAssignment write permission', function 
     ])
         ->assertForbidden();
 });
+
+test('conflict-resolution returns alternative time periods for the current resource', function (): void {
+    $resource = Resource::factory()->create([
+        'capacity_value' => 1,
+        'capacity_unit' => 'slots',
+    ]);
+
+    TaskAssignment::factory()->create([
+        'resource_id' => $resource->id,
+        'starts_at' => CarbonImmutable::parse('2026-04-01 08:00:00'),
+        'ends_at' => CarbonImmutable::parse('2026-04-01 18:00:00'),
+        'allocation_ratio' => 1,
+    ]);
+
+    postJson(route('conflict-resolution'), [
+        'current_resource_id' => $resource->id,
+        'starts_at' => '2026-04-01',
+        'ends_at' => '2026-04-02',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('alternative_periods.0.starts_at', '2026-04-02')
+        ->assertJsonPath('alternative_periods.0.ends_at', '2026-04-03');
+});

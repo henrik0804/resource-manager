@@ -23,7 +23,10 @@ final class ConflictResolutionController
         $endsAt = $this->resolveEndsAt($validated, $task);
 
         if ($startsAt === null || $endsAt === null) {
-            return response()->json(['alternatives' => []]);
+            return response()->json([
+                'alternatives' => [],
+                'alternative_periods' => [],
+            ]);
         }
 
         $alternatives = $service->alternatives(
@@ -31,6 +34,16 @@ final class ConflictResolutionController
             startsAt: $startsAt,
             endsAt: $endsAt,
             task: $task,
+            allocationRatio: $validated['allocation_ratio'] ?? null,
+            excludeAssignmentId: isset($validated['exclude_assignment_id'])
+                ? (int) $validated['exclude_assignment_id']
+                : null,
+        );
+
+        $alternativePeriods = $service->alternativePeriods(
+            resource: $currentResource,
+            startsAt: $startsAt,
+            endsAt: $endsAt,
             allocationRatio: $validated['allocation_ratio'] ?? null,
             excludeAssignmentId: isset($validated['exclude_assignment_id'])
                 ? (int) $validated['exclude_assignment_id']
@@ -45,6 +58,9 @@ final class ConflictResolutionController
                     'capacity_value' => $resource->capacity_value,
                     'capacity_unit' => $resource->capacity_unit?->value,
                 ])
+                ->values()
+                ->all(),
+            'alternative_periods' => $alternativePeriods
                 ->values()
                 ->all(),
         ]);
