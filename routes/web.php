@@ -33,6 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('resource-types', ResourceTypeController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('roles', RoleController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('permissions', PermissionController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::put('permissions/sync/{role}', [PermissionController::class, 'sync'])->name('permissions.sync');
     Route::resource('qualifications', QualificationController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('resources', ResourceController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('resource-absences', ResourceAbsenceController::class)->only(['index', 'store', 'update', 'destroy']);

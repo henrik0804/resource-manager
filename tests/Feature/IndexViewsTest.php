@@ -68,9 +68,8 @@ describe('authenticated users', function (): void {
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('permissions/Index')
-                ->has('permissions.data')
+                ->has('roles')
                 ->has('sections')
-                ->has('search')
             );
     });
 

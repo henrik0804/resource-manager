@@ -6,10 +6,12 @@ namespace App\Http\Controllers;
 
 use App\Actions\DeletePermissionAction;
 use App\Actions\StorePermissionAction;
+use App\Actions\SyncRolePermissionsAction;
 use App\Actions\UpdatePermissionAction;
 use App\Enums\AccessSection;
 use App\Http\Requests\DestroyRequest;
 use App\Http\Requests\StorePermissionRequest;
+use App\Http\Requests\SyncRolePermissionsRequest;
 use App\Http\Requests\UpdatePermissionRequest;
 use App\Models\Permission;
 use App\Models\Role;
@@ -25,30 +27,37 @@ final class PermissionController
     {
         Gate::authorize('viewAny', Permission::class);
 
-        $search = $request->string('search')->toString();
-
-        $permissions = Permission::query()
-            ->with('role')
-            ->when($search, fn ($query, $search) => $query
-                ->where('section', 'like', "%{$search}%")
-                ->orWhereHas('role', fn ($roleQuery) => $roleQuery->where('name', 'like', "%{$search}%")))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
-
         $sections = collect(AccessSection::cases())
             ->map(fn (AccessSection $section) => [
                 'value' => $section->value,
                 'label' => $section->label(),
             ]);
 
-        $roles = Role::query()->orderBy('name')->get(['id', 'name']);
+        $roles = Role::query()
+            ->with('permissions')
+            ->withCount('users')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Role $role) => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'description' => $role->description,
+                'users_count' => $role->users_count,
+                'permissions' => $role->permissions->keyBy(
+                    fn (Permission $p) => $p->section->value,
+                )->map(fn (Permission $p) => [
+                    'can_read' => $p->can_read,
+                    'can_write' => $p->can_write,
+                    'can_write_owned' => $p->can_write_owned,
+                ]),
+            ]);
+
+        $selectedRoleId = $request->integer('role');
 
         return Inertia::render('permissions/Index', [
-            'permissions' => $permissions,
             'roles' => $roles,
             'sections' => $sections,
-            'search' => $search,
+            'selectedRoleId' => $selectedRoleId ?: null,
         ]);
     }
 
@@ -81,6 +90,16 @@ final class PermissionController
         return redirect()->back()->with([
             'status' => 'success',
             'message' => 'Permission deleted.',
+        ]);
+    }
+
+    public function sync(SyncRolePermissionsRequest $request, Role $role, SyncRolePermissionsAction $action): RedirectResponse
+    {
+        $action->handle($role, $request->validated()['permissions']);
+
+        return redirect()->back()->with([
+            'status' => 'success',
+            'message' => 'Permissions synced.',
         ]);
     }
 }
