@@ -8,6 +8,7 @@ use App\Enums\AccessSection;
 use App\Models\Permission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class SyncRolePermissionsRequest extends FormRequest
 {
@@ -38,9 +39,9 @@ class SyncRolePermissionsRequest extends FormRequest
     /**
      * Validate the permission keys are valid AccessSection values.
      */
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+        $validator->after(function (Validator $validator): void {
             $validSections = collect(AccessSection::cases())->pluck('value')->all();
 
             foreach (array_keys($this->input('permissions', [])) as $section) {

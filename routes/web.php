@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AutoAssignController;
 use App\Http\Controllers\CheckConflictsController;
 use App\Http\Controllers\ConflictResolutionController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MyAssignmentController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\QualificationController;
@@ -27,7 +28,7 @@ Route::get('/', fn () => Inertia::render('Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ]))->name('home');
 
-Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('resource-types', ResourceTypeController::class)->only(['index', 'store', 'update', 'destroy']);

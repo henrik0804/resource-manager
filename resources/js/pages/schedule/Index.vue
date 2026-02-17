@@ -298,12 +298,17 @@ const hasAnyBars = computed(() =>
                         >
                             <div class="font-medium">
                                 {{
-                                    (bar.ganttBarConfig as GanttBar['ganttBarConfig']).taskTitle ??
-                                    bar.ganttBarConfig.label
+                                    (
+                                        bar.ganttBarConfig as GanttBar['ganttBarConfig']
+                                    ).taskTitle ?? bar.ganttBarConfig.label
                                 }}
                             </div>
                             <div class="mt-0.5 text-gray-400">
-                                {{ formatBarTimeframe(bar as unknown as GanttBar) }}
+                                {{
+                                    formatBarTimeframe(
+                                        bar as unknown as GanttBar,
+                                    )
+                                }}
                             </div>
                         </div>
                     </template>

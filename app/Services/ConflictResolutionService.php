@@ -12,7 +12,7 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
-final class ConflictResolutionService
+final readonly class ConflictResolutionService
 {
     public function __construct(
         private ConflictDetectionService $conflictDetection,
@@ -69,7 +69,7 @@ final class ConflictResolutionService
     }
 
     /**
-     * @return Collection<int, \App\Models\Resource>
+     * @return Collection<int, resource>
      */
     public function alternatives(
         Resource $currentResource,
@@ -105,7 +105,7 @@ final class ConflictResolutionService
     }
 
     /**
-     * @return Collection<int, \App\Models\Resource>
+     * @return Collection<int, resource>
      */
     private function candidateResources(Resource $currentResource, ?Task $task): Collection
     {

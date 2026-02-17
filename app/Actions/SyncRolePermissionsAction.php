@@ -21,7 +21,7 @@ final class SyncRolePermissionsAction
      */
     public function handle(Role $role, array $permissions): void
     {
-        DB::transaction(function () use ($role, $permissions) {
+        DB::transaction(function () use ($role, $permissions): void {
             $existingPermissions = $role->permissions()->get()->keyBy(
                 fn (Permission $permission) => $permission->section->value,
             );
