@@ -35,50 +35,51 @@ class TaskRequirementSeeder extends Seeder
          * @var array<string, list<array{qualification: string, level: QualificationLevel}>>
          */
         $plans = [
-            'Office Wing Renovation' => [
-                ['qualification' => 'Safety Training', 'level' => QualificationLevel::Intermediate],
-                ['qualification' => 'Project Management', 'level' => QualificationLevel::Advanced],
+            'Büroflügel Renovierung' => [
+                ['qualification' => 'Sicherheitsschulung', 'level' => QualificationLevel::Intermediate],
+                ['qualification' => 'Projektmanagement', 'level' => QualificationLevel::Advanced],
             ],
-            'v3.0 Product Launch Sprint' => [
-                ['qualification' => 'Frontend Development', 'level' => QualificationLevel::Advanced],
-                ['qualification' => 'Backend Development', 'level' => QualificationLevel::Advanced],
-                ['qualification' => 'UX Research', 'level' => QualificationLevel::Intermediate],
+            'Produktversion 3.0 Start sprint' => [
+                ['qualification' => 'Frontend-Entwicklung', 'level' => QualificationLevel::Advanced],
+                ['qualification' => 'Backend-Entwicklung', 'level' => QualificationLevel::Advanced],
+                ['qualification' => 'UX-Forschung', 'level' => QualificationLevel::Intermediate],
             ],
-            'Annual Safety Audit' => [
-                ['qualification' => 'Safety Training', 'level' => QualificationLevel::Expert],
-                ['qualification' => 'Forklift Certified', 'level' => QualificationLevel::Advanced],
+            'Jährliche Sicherheitsprüfung' => [
+                ['qualification' => 'Sicherheitsschulung', 'level' => QualificationLevel::Expert],
+                ['qualification' => 'Gabelstapler-Führerschein', 'level' => QualificationLevel::Advanced],
             ],
-            'Client Discovery Workshop — Meridian Corp' => [
-                ['qualification' => 'Workshop Facilitation', 'level' => QualificationLevel::Advanced],
-                ['qualification' => 'UX Research', 'level' => QualificationLevel::Intermediate],
+            'Kunden-Workshop — Meridian Corp' => [
+                ['qualification' => 'Workshop-Moderation', 'level' => QualificationLevel::Advanced],
+                ['qualification' => 'UX-Forschung', 'level' => QualificationLevel::Intermediate],
             ],
-            'Warehouse Inventory Reconciliation' => [
-                ['qualification' => 'Safety Training', 'level' => QualificationLevel::Beginner],
-                ['qualification' => 'Forklift Certified', 'level' => QualificationLevel::Intermediate],
+            'Lagerbestands-Ausgleich' => [
+                ['qualification' => 'Sicherheitsschulung', 'level' => QualificationLevel::Beginner],
+                ['qualification' => 'Gabelstapler-Führerschein', 'level' => QualificationLevel::Intermediate],
             ],
-            'New Hire Onboarding — Q1 Cohort' => [
-                ['qualification' => 'Project Management', 'level' => QualificationLevel::Intermediate],
+            'Einarbeitung neue Mitarbeiter — Q1 Kohorte' => [
+                ['qualification' => 'Projektmanagement', 'level' => QualificationLevel::Intermediate],
             ],
-            'Trade Show Booth Fabrication' => [
-                ['qualification' => 'Frontend Development', 'level' => QualificationLevel::Beginner],
-                ['qualification' => 'UX Research', 'level' => QualificationLevel::Advanced],
+            'Messestand Fertigung' => [
+                ['qualification' => 'Frontend-Entwicklung', 'level' => QualificationLevel::Beginner],
+                ['qualification' => 'UX-Forschung', 'level' => QualificationLevel::Advanced],
+                ['qualification' => 'Audio-Einrichtung', 'level' => QualificationLevel::Intermediate],
             ],
-            'IT Infrastructure Migration' => [
-                ['qualification' => 'Backend Development', 'level' => QualificationLevel::Expert],
+            'IT-Infrastruktur Migration' => [
+                ['qualification' => 'Backend-Entwicklung', 'level' => QualificationLevel::Expert],
             ],
-            'Quarterly Business Review Preparation' => [
-                ['qualification' => 'Project Management', 'level' => QualificationLevel::Beginner],
+            'Quartalsreview Vorbereitung' => [
+                ['qualification' => 'Projektmanagement', 'level' => QualificationLevel::Beginner],
             ],
-            'Equipment Maintenance Window' => [
-                ['qualification' => 'Safety Training', 'level' => QualificationLevel::Intermediate],
-                ['qualification' => 'Forklift Certified', 'level' => QualificationLevel::Advanced],
+            'Wartungsfenster Ausstattung' => [
+                ['qualification' => 'Sicherheitsschulung', 'level' => QualificationLevel::Intermediate],
+                ['qualification' => 'Gabelstapler-Führerschein', 'level' => QualificationLevel::Advanced],
             ],
-            'Cross-Team Process Optimization' => [
-                ['qualification' => 'Project Management', 'level' => QualificationLevel::Advanced],
-                ['qualification' => 'Workshop Facilitation', 'level' => QualificationLevel::Intermediate],
+            'Prozessoptimierung Team-übergreifend' => [
+                ['qualification' => 'Projektmanagement', 'level' => QualificationLevel::Advanced],
+                ['qualification' => 'Workshop-Moderation', 'level' => QualificationLevel::Intermediate],
             ],
-            'Emergency Drill Coordination' => [
-                ['qualification' => 'Safety Training', 'level' => QualificationLevel::Expert],
+            'Notfallübung Koordination' => [
+                ['qualification' => 'Sicherheitsschulung', 'level' => QualificationLevel::Expert],
             ],
         ];
 

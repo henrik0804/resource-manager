@@ -52,89 +52,89 @@ class TaskAssignmentSeeder extends Seeder
          * @var array<string, list<array{person?: int, name?: string, ratio?: float, from?: int, to?: int}>>
          */
         $plans = [
-            'Office Wing Renovation' => [
+            'Büroflügel Renovierung' => [
                 ['person' => 0, 'ratio' => 0.50],
                 ['person' => 1],
                 ['person' => 2, 'from' => 1, 'to' => 3],
-                ['name' => 'Workshop Bay'],
-                ['name' => 'Forklift #2', 'to' => 2],
+                ['name' => 'Werkstattbereich'],
+                ['name' => 'Gabelstapler #2', 'to' => 2],
             ],
-            'v3.0 Product Launch Sprint' => [
+            'Produktversion 3.0 Start sprint' => [
                 ['person' => 0, 'ratio' => 0.50],
                 ['person' => 3],
                 ['person' => 4],
                 ['person' => 5, 'ratio' => 0.75, 'to' => 3],
-                ['name' => 'Design Team', 'to' => 3],
-                ['name' => 'Conference Room A', 'to' => 1],
+                ['name' => 'Entwicklungsteam', 'to' => 3],
+                ['name' => 'Konferenzraum A', 'to' => 1],
             ],
-            'Annual Safety Audit' => [
+            'Jährliche Sicherheitsprüfung' => [
                 ['person' => 0],
                 ['person' => 2, 'ratio' => 0.50],
-                ['name' => 'Conference Room A', 'to' => 0],
-                ['name' => 'Workshop Bay', 'from' => 1],
-                ['name' => 'Forklift #2', 'from' => 1, 'to' => 1],
+                ['name' => 'Konferenzraum A', 'to' => 0],
+                ['name' => 'Werkstattbereich', 'from' => 1],
+                ['name' => 'Gabelstapler #2', 'from' => 1, 'to' => 1],
             ],
-            'Client Discovery Workshop — Meridian Corp' => [
+            'Kunden-Workshop — Meridian Corp' => [
                 ['person' => 1],
                 ['person' => 0, 'ratio' => 0.50],
-                ['name' => 'Conference Room A'],
-                ['name' => 'Projector Unit'],
+                ['name' => 'Konferenzraum A'],
+                ['name' => 'Beamer'],
             ],
-            'Warehouse Inventory Reconciliation' => [
+            'Lagerbestands-Ausgleich' => [
                 ['person' => 2],
                 ['person' => 3, 'to' => 1],
                 ['person' => 5, 'from' => 2],
-                ['name' => 'Operations Team'],
-                ['name' => 'Forklift #2'],
-                ['name' => 'Workshop Bay'],
+                ['name' => 'Betriebsteam'],
+                ['name' => 'Gabelstapler #2'],
+                ['name' => 'Werkstattbereich'],
             ],
-            'New Hire Onboarding — Q1 Cohort' => [
+            'Einarbeitung neue Mitarbeiter — Q1 Kohorte' => [
                 ['person' => 0, 'ratio' => 0.50],
                 ['person' => 4, 'ratio' => 0.25, 'from' => 1],
-                ['name' => 'Conference Room A', 'to' => 2],
-                ['name' => 'Meeting Room B', 'from' => 3],
-                ['name' => 'Operations Team', 'from' => 3, 'to' => 3],
+                ['name' => 'Konferenzraum A', 'to' => 2],
+                ['name' => 'Besprechungsraum B', 'from' => 3],
+                ['name' => 'Betriebsteam', 'from' => 3, 'to' => 3],
             ],
-            'Trade Show Booth Fabrication' => [
+            'Messestand Fertigung' => [
                 ['person' => 1],
                 ['person' => 5, 'ratio' => 0.75],
                 ['person' => 4, 'ratio' => 0.50, 'from' => 3],
-                ['name' => 'Design Team'],
-                ['name' => '3D Printers', 'from' => 1, 'to' => 4],
-                ['name' => 'Workshop Bay', 'from' => 3],
+                ['name' => 'Entwicklungsteam'],
+                ['name' => '3D-Drucker', 'from' => 1, 'to' => 4],
+                ['name' => 'Werkstattbereich', 'from' => 3],
             ],
-            'IT Infrastructure Migration' => [
+            'IT-Infrastruktur Migration' => [
                 ['person' => 3],
                 ['person' => 4],
                 ['person' => 2, 'from' => 4],
-                ['name' => 'Operations Team'],
+                ['name' => 'Betriebsteam'],
             ],
-            'Quarterly Business Review Preparation' => [
+            'Quartalsreview Vorbereitung' => [
                 ['person' => 0, 'ratio' => 0.50],
                 ['person' => 1, 'ratio' => 0.50],
-                ['name' => 'Conference Room A', 'from' => 1],
-                ['name' => 'Projector Unit', 'from' => 1],
+                ['name' => 'Konferenzraum A', 'from' => 1],
+                ['name' => 'Beamer', 'from' => 1],
             ],
-            'Equipment Maintenance Window' => [
+            'Wartungsfenster Ausstattung' => [
                 ['person' => 2],
                 ['person' => 5, 'ratio' => 0.50, 'to' => 1],
-                ['name' => 'Forklift #2'],
-                ['name' => '3D Printers'],
-                ['name' => 'Workshop Bay'],
+                ['name' => 'Gabelstapler #2'],
+                ['name' => '3D-Drucker'],
+                ['name' => 'Werkstattbereich'],
             ],
-            'Cross-Team Process Optimization' => [
+            'Prozessoptimierung Team-übergreifend' => [
                 ['person' => 0, 'ratio' => 0.75],
                 ['person' => 1, 'ratio' => 0.50],
-                ['name' => 'Design Team', 'to' => 1],
-                ['name' => 'Operations Team', 'from' => 2],
-                ['name' => 'Conference Room A'],
+                ['name' => 'Entwicklungsteam', 'to' => 1],
+                ['name' => 'Betriebsteam', 'from' => 2],
+                ['name' => 'Konferenzraum A'],
             ],
-            'Emergency Drill Coordination' => [
+            'Notfallübung Koordination' => [
                 ['person' => 0],
                 ['person' => 2],
-                ['name' => 'Conference Room A'],
-                ['name' => 'Workshop Bay'],
-                ['name' => 'Meeting Room B'],
+                ['name' => 'Konferenzraum A'],
+                ['name' => 'Werkstattbereich'],
+                ['name' => 'Besprechungsraum B'],
             ],
         ];
 
