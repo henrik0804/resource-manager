@@ -147,6 +147,72 @@ test('auto assign controller returns suggestions when conflicts block assignment
         ->task_priority->toBe('low');
 });
 
+test('auto assign controller reschedules lower priority tasks when allowed', function (): void {
+    actingAsUserWithPermissions([
+        'write' => [AccessSection::AutomatedAssignment, AccessSection::PriorityScheduling],
+    ]);
+
+    $qualification = Qualification::factory()->create();
+
+    $taskStartsAt = CarbonImmutable::parse('2026-05-01 00:00:00');
+    $taskEndsAt = CarbonImmutable::parse('2026-05-02 00:00:00');
+
+    $highPriorityTask = Task::factory()->create([
+        'title' => 'Priorisiert',
+        'priority' => 'high',
+        'status' => 'planned',
+        'starts_at' => $taskStartsAt,
+        'ends_at' => $taskEndsAt,
+    ]);
+
+    TaskRequirement::factory()->create([
+        'task_id' => $highPriorityTask->id,
+        'qualification_id' => $qualification->id,
+        'required_level' => QualificationLevel::Intermediate,
+    ]);
+
+    $resource = Resource::factory()->create([
+        'capacity_value' => 1,
+        'capacity_unit' => 'slots',
+    ]);
+
+    ResourceQualification::factory()->create([
+        'resource_id' => $resource->id,
+        'qualification_id' => $qualification->id,
+        'level' => QualificationLevel::Intermediate,
+    ]);
+
+    $lowPriorityTask = Task::factory()->create([
+        'title' => 'Später',
+        'priority' => 'low',
+        'status' => 'planned',
+        'starts_at' => $taskStartsAt,
+        'ends_at' => $taskEndsAt,
+    ]);
+
+    $lowPriorityAssignment = TaskAssignment::factory()->create([
+        'task_id' => $lowPriorityTask->id,
+        'resource_id' => $resource->id,
+        'starts_at' => $taskStartsAt,
+        'ends_at' => $taskEndsAt,
+        'allocation_ratio' => 1,
+        'assignment_source' => AssignmentSource::Manual,
+    ]);
+
+    $response = postJson(route('task-assignments.auto-assign'));
+
+    $response
+        ->assertSuccessful()
+        ->assertJsonPath('assigned', 1)
+        ->assertJsonPath('skipped', 0)
+        ->assertJsonPath('rescheduled.0.assignment_id', $lowPriorityAssignment->id);
+
+    $lowPriorityAssignment->refresh();
+
+    expect($lowPriorityAssignment->starts_at?->toDateString())->toBe('2026-05-02');
+    expect($lowPriorityAssignment->ends_at?->toDateString())->toBe('2026-05-03');
+});
+
 test('auto assign controller requires automated assignment permission', function (): void {
     actingAsUserWithPermissions([
         'write' => [],

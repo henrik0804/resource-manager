@@ -6,6 +6,7 @@ import {
     TriangleAlert,
     User,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,11 +30,19 @@ interface Props {
     result: AutoAssignResponse | null;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
     (e: 'update:open', value: boolean): void;
 }>();
+
+const rescheduledCount = computed(() => {
+    if (!props.result) {
+        return 0;
+    }
+
+    return props.result.rescheduled?.length ?? 0;
+});
 
 const priorityLabels: Record<TaskPriority, string> = {
     urgent: 'Dringend',
@@ -82,6 +91,14 @@ function formatUtilization(percentage: number | null): string {
     return `${Math.round(percentage)} %`;
 }
 
+function formatPeriod(start: string | null, end: string | null): string {
+    if (!start || !end) {
+        return '--';
+    }
+
+    return `${formatDate(start)} – ${formatDate(end)}`;
+}
+
 function hasSuggestions(result: AutoAssignResponse): boolean {
     return result.suggestions.length > 0;
 }
@@ -105,7 +122,7 @@ function suggestionSummary(suggestion: AutoAssignSuggestion): string {
             </DialogHeader>
 
             <div v-if="result" class="space-y-4">
-                <div class="flex gap-4">
+                <div class="flex flex-wrap gap-4">
                     <div
                         class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
                     >
@@ -126,7 +143,73 @@ function suggestionSummary(suggestion: AutoAssignSuggestion): string {
                         </span>
                         übersprungen
                     </div>
+                    <div
+                        v-if="rescheduledCount > 0"
+                        class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                    >
+                        <ArrowRightLeft class="size-4 text-amber-600" />
+                        <span class="font-medium">{{ rescheduledCount }}</span>
+                        verschoben
+                    </div>
                 </div>
+
+                <template v-if="rescheduledCount > 0">
+                    <div class="space-y-1">
+                        <h3 class="text-sm font-medium">
+                            Verschobene Aufgaben
+                        </h3>
+                        <p class="text-xs text-muted-foreground">
+                            Niedriger priorisierte Aufgaben wurden in
+                            alternative Zeitfenster verschoben.
+                        </p>
+                    </div>
+
+                    <div class="space-y-2 rounded-md border p-3">
+                        <div
+                            v-for="entry in result.rescheduled"
+                            :key="entry.assignment_id"
+                            class="rounded-md border bg-muted/40 p-2 text-sm"
+                        >
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">
+                                    {{ entry.task_title }}
+                                </span>
+                                <Badge
+                                    :variant="
+                                        priorityBadgeVariant(
+                                            entry.task_priority,
+                                        )
+                                    "
+                                >
+                                    {{
+                                        priorityLabels[entry.task_priority] ??
+                                        entry.task_priority
+                                    }}
+                                </Badge>
+                            </div>
+                            <div class="mt-1 text-xs text-muted-foreground">
+                                <div>
+                                    Alt:
+                                    {{
+                                        formatPeriod(
+                                            entry.previous_starts_at,
+                                            entry.previous_ends_at,
+                                        )
+                                    }}
+                                </div>
+                                <div>
+                                    Neu:
+                                    {{
+                                        formatPeriod(
+                                            entry.starts_at,
+                                            entry.ends_at,
+                                        )
+                                    }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
 
                 <template v-if="hasSuggestions(result)">
                     <div class="space-y-1">

@@ -182,9 +182,21 @@ export interface AutoAssignSuggestion {
     resources: AutoAssignSuggestionResource[];
 }
 
+export interface AutoAssignRescheduledAssignment {
+    assignment_id: number;
+    task_id: number;
+    task_title: string;
+    task_priority: TaskPriority;
+    previous_starts_at: string | null;
+    previous_ends_at: string | null;
+    starts_at: string | null;
+    ends_at: string | null;
+}
+
 export interface AutoAssignResponse {
     assigned: number;
     skipped: number;
+    rescheduled: AutoAssignRescheduledAssignment[];
     suggestions: AutoAssignSuggestion[];
 }
 
@@ -195,8 +207,14 @@ export interface ConflictResolutionResource {
     capacity_unit: CapacityUnit | null;
 }
 
+export interface ConflictResolutionPeriod {
+    starts_at: string;
+    ends_at: string;
+}
+
 export interface ConflictResolutionResponse {
     alternatives: ConflictResolutionResource[];
+    alternative_periods: ConflictResolutionPeriod[];
 }
 
 export interface Paginated<T> {

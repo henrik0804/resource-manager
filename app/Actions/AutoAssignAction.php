@@ -7,6 +7,7 @@ namespace App\Actions;
 use App\Enums\AssignmentSource;
 use App\Enums\ConflictType;
 use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use App\Models\Resource;
 use App\Models\Task;
 use App\Models\TaskAssignment;
@@ -14,9 +15,13 @@ use App\Models\TaskRequirement;
 use App\Services\ConflictDetectionService;
 use App\Services\ConflictReport;
 use App\Services\UtilizationService;
+use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use RuntimeException;
+use Throwable;
 
 final readonly class AutoAssignAction
 {
@@ -24,12 +29,13 @@ final readonly class AutoAssignAction
         private ConflictDetectionService $conflictDetection,
         private UtilizationService $utilizationService,
         private StoreTaskAssignmentAction $storeTaskAssignment,
+        private UpdateTaskAssignmentAction $updateTaskAssignment,
     ) {}
 
     /**
-     * @return array{assigned: int, skipped: int, suggestions: list<array{task: array{id: int, title: string, priority: string, starts_at: string|null, ends_at: string|null}, resources: list<array{resource: array{id: int, name: string, utilization_percentage: float|null}, conflict_types: list<string>, blocking_assignments: list<array{id: int, task_id: int, task_title: string, task_priority: string, starts_at: string|null, ends_at: string|null, assignment_source: string}>}>}>}
+     * @return array{assigned: int, skipped: int, rescheduled: list<array{assignment_id: int, task_id: int, task_title: string, task_priority: string, previous_starts_at: string|null, previous_ends_at: string|null, starts_at: string|null, ends_at: string|null}>, suggestions: list<array{task: array{id: int, title: string, priority: string, starts_at: string|null, ends_at: string|null}, resources: list<array{resource: array{id: int, name: string, utilization_percentage: float|null}, conflict_types: list<string>, blocking_assignments: list<array{id: int, task_id: int, task_title: string, task_priority: string, starts_at: string|null, ends_at: string|null, assignment_source: string}>}>}>}
      */
-    public function handle(): array
+    public function handle(bool $allowPriorityScheduling = false): array
     {
         $tasks = Task::query()
             ->whereDoesntHave('assignments')
@@ -41,6 +47,7 @@ final readonly class AutoAssignAction
         $assigned = 0;
         $skipped = 0;
         $suggestions = [];
+        $rescheduled = [];
 
         foreach ($tasks as $task) {
             if ($task->starts_at === null || $task->ends_at === null) {
@@ -87,6 +94,21 @@ final readonly class AutoAssignAction
 
                 $blockingAssignments = $this->blockingAssignments($task, $report);
 
+                if ($allowPriorityScheduling && $blockingAssignments->isNotEmpty()) {
+                    $rescheduledAssignments = $this->attemptPriorityScheduling(
+                        task: $task,
+                        resource: $resource,
+                        blockingAssignments: $blockingAssignments,
+                    );
+
+                    if ($rescheduledAssignments !== null) {
+                        $rescheduled = array_merge($rescheduled, $rescheduledAssignments);
+                        $assigned++;
+                        $assignedTask = true;
+                        break;
+                    }
+                }
+
                 if ($blockingAssignments->isEmpty()) {
                     continue;
                 }
@@ -119,6 +141,7 @@ final readonly class AutoAssignAction
         return [
             'assigned' => $assigned,
             'skipped' => $skipped,
+            'rescheduled' => $rescheduled,
             'suggestions' => $suggestions,
         ];
     }
@@ -223,6 +246,191 @@ final readonly class AutoAssignAction
     }
 
     /**
+     * @param  Collection<int, TaskAssignment>  $blockingAssignments
+     * @return list<array{assignment_id: int, task_id: int, task_title: string, task_priority: string, previous_starts_at: string|null, previous_ends_at: string|null, starts_at: string|null, ends_at: string|null}>|null
+     */
+    private function attemptPriorityScheduling(Task $task, Resource $resource, Collection $blockingAssignments): ?array
+    {
+        if ($task->starts_at === null || $task->ends_at === null) {
+            return null;
+        }
+
+        try {
+            return DB::transaction(function () use ($task, $resource, $blockingAssignments): array {
+                $rescheduled = $this->rescheduleBlockingAssignments($task, $resource, $blockingAssignments);
+
+                if ($rescheduled === null) {
+                    throw new RuntimeException('Unable to reschedule blocking assignments.');
+                }
+
+                $report = $this->conflictDetection->detect(
+                    resource: $resource,
+                    startsAt: $task->starts_at,
+                    endsAt: $task->ends_at,
+                );
+
+                if ($report->hasConflicts()) {
+                    throw new RuntimeException('Conflicts remain after rescheduling.');
+                }
+
+                $this->storeTaskAssignment->handle([
+                    'task_id' => $task->id,
+                    'resource_id' => $resource->id,
+                    'assignment_source' => AssignmentSource::Automated->value,
+                ]);
+
+                return $rescheduled;
+            });
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @param  Collection<int, TaskAssignment>  $blockingAssignments
+     * @return list<array{assignment_id: int, task_id: int, task_title: string, task_priority: string, previous_starts_at: string|null, previous_ends_at: string|null, starts_at: string|null, ends_at: string|null}>|null
+     */
+    private function rescheduleBlockingAssignments(Task $priorityTask, Resource $resource, Collection $blockingAssignments): ?array
+    {
+        $priorityEndsAt = $priorityTask->ends_at;
+
+        if ($priorityEndsAt === null) {
+            return null;
+        }
+
+        $sortedAssignments = $blockingAssignments
+            ->filter(fn (TaskAssignment $assignment) => $this->canShiftAssignment($assignment))
+            ->sortBy(function (TaskAssignment $assignment): int {
+                $startsAt = $assignment->starts_at ?? $assignment->task?->starts_at;
+
+                return $startsAt?->getTimestamp() ?? PHP_INT_MAX;
+            });
+
+        if ($sortedAssignments->count() !== $blockingAssignments->count()) {
+            return null;
+        }
+
+        $rescheduled = [];
+
+        foreach ($sortedAssignments as $assignment) {
+            $assignmentTask = $assignment->task;
+
+            if ($assignmentTask === null) {
+                return null;
+            }
+
+            $assignmentStartsAt = $assignment->starts_at ?? $assignmentTask->starts_at;
+            $assignmentEndsAt = $assignment->ends_at ?? $assignmentTask->ends_at;
+
+            if ($assignmentStartsAt === null || $assignmentEndsAt === null) {
+                return null;
+            }
+
+            $durationMinutes = $this->durationMinutes($assignmentStartsAt, $assignmentEndsAt);
+
+            if ($durationMinutes <= 0) {
+                return null;
+            }
+
+            $earliestStart = $this->laterOf($priorityEndsAt, $assignmentStartsAt);
+
+            $slot = $this->findNextAvailableSlot(
+                resource: $resource,
+                earliestStart: $earliestStart,
+                durationMinutes: $durationMinutes,
+                allocationRatio: $assignment->allocation_ratio,
+                excludeAssignmentId: $assignment->id,
+            );
+
+            if ($slot === null) {
+                return null;
+            }
+
+            $this->updateTaskAssignment->handle($assignment, [
+                'starts_at' => $slot['starts_at'],
+                'ends_at' => $slot['ends_at'],
+            ]);
+
+            $rescheduled[] = $this->rescheduledSummary(
+                assignment: $assignment,
+                previousStartsAt: $assignmentStartsAt,
+                previousEndsAt: $assignmentEndsAt,
+                startsAt: $slot['starts_at'],
+                endsAt: $slot['ends_at'],
+            );
+        }
+
+        return $rescheduled;
+    }
+
+    private function canShiftAssignment(TaskAssignment $assignment): bool
+    {
+        $task = $assignment->task;
+
+        if ($task === null) {
+            return false;
+        }
+
+        return in_array($task->status, [TaskStatus::Planned, TaskStatus::Blocked], true);
+    }
+
+    /**
+     * @return array{starts_at: CarbonImmutable, ends_at: CarbonImmutable}|null
+     */
+    private function findNextAvailableSlot(
+        Resource $resource,
+        CarbonImmutable $earliestStart,
+        int $durationMinutes,
+        float|int|string|null $allocationRatio,
+        ?int $excludeAssignmentId,
+        int $searchDays = 30,
+    ): ?array {
+        if ($durationMinutes <= 0) {
+            return null;
+        }
+
+        $maxOffset = max($searchDays, 0);
+
+        for ($offset = 0; $offset <= $maxOffset; $offset++) {
+            $candidateStart = $earliestStart->addDays($offset);
+            $candidateEnd = $candidateStart->addMinutes($durationMinutes);
+
+            $report = $this->conflictDetection->detect(
+                resource: $resource,
+                startsAt: $candidateStart,
+                endsAt: $candidateEnd,
+                allocationRatio: $allocationRatio,
+                excludeAssignmentId: $excludeAssignmentId,
+            );
+
+            if (! $report->hasConflicts()) {
+                return [
+                    'starts_at' => $candidateStart,
+                    'ends_at' => $candidateEnd,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function durationMinutes(DateTimeInterface $startsAt, DateTimeInterface $endsAt): int
+    {
+        $start = $this->toCarbon($startsAt);
+        $end = $this->toCarbon($endsAt);
+
+        return (int) $start->diffInMinutes($end, false);
+    }
+
+    private function laterOf(DateTimeInterface $first, DateTimeInterface $second): CarbonImmutable
+    {
+        $firstCarbon = $this->toCarbon($first);
+        $secondCarbon = $this->toCarbon($second);
+
+        return $firstCarbon->gte($secondCarbon) ? $firstCarbon : $secondCarbon;
+    }
+
+    /**
      * @return array{id: int, title: string, priority: string, starts_at: string|null, ends_at: string|null}
      */
     private function taskSummary(Task $task): array
@@ -264,6 +472,41 @@ final readonly class AutoAssignAction
             'ends_at' => ($assignment->ends_at ?? $task?->ends_at)?->toDateTimeString(),
             'assignment_source' => $assignment->assignment_source->value,
         ];
+    }
+
+    /**
+     * @return array{assignment_id: int, task_id: int, task_title: string, task_priority: string, previous_starts_at: string|null, previous_ends_at: string|null, starts_at: string|null, ends_at: string|null}
+     */
+    private function rescheduledSummary(
+        TaskAssignment $assignment,
+        DateTimeInterface $previousStartsAt,
+        DateTimeInterface $previousEndsAt,
+        DateTimeInterface $startsAt,
+        DateTimeInterface $endsAt,
+    ): array {
+        $task = $assignment->task;
+
+        $taskPriority = $task?->priority?->value ?? TaskPriority::Low->value;
+
+        return [
+            'assignment_id' => $assignment->id,
+            'task_id' => $assignment->task_id,
+            'task_title' => $task?->title ?? 'Unknown task',
+            'task_priority' => $taskPriority,
+            'previous_starts_at' => $this->toCarbon($previousStartsAt)->toDateTimeString(),
+            'previous_ends_at' => $this->toCarbon($previousEndsAt)->toDateTimeString(),
+            'starts_at' => $this->toCarbon($startsAt)->toDateTimeString(),
+            'ends_at' => $this->toCarbon($endsAt)->toDateTimeString(),
+        ];
+    }
+
+    private function toCarbon(DateTimeInterface $dateTime): CarbonImmutable
+    {
+        if ($dateTime instanceof CarbonImmutable) {
+            return $dateTime;
+        }
+
+        return CarbonImmutable::instance($dateTime);
     }
 
     private function priorityRank(?TaskPriority $priority): int

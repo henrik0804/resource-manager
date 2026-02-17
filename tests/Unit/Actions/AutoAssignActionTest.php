@@ -124,3 +124,65 @@ test('auto assign action returns shift suggestions for higher priority tasks', f
     expect($result['suggestions'][0]['task']['id'])->toBe($highPriorityTask->id);
     expect($result['suggestions'][0]['resources'][0]['blocking_assignments'][0]['task_id'])->toBe($lowPriorityTask->id);
 });
+
+test('auto assign action reschedules lower priority assignments when enabled', function (): void {
+    $qualification = Qualification::factory()->create();
+
+    $taskStartsAt = CarbonImmutable::parse('2026-04-01 00:00:00');
+    $taskEndsAt = CarbonImmutable::parse('2026-04-02 00:00:00');
+
+    $highPriorityTask = Task::factory()->create([
+        'starts_at' => $taskStartsAt,
+        'ends_at' => $taskEndsAt,
+        'priority' => 'urgent',
+        'status' => 'planned',
+    ]);
+
+    TaskRequirement::factory()->create([
+        'task_id' => $highPriorityTask->id,
+        'qualification_id' => $qualification->id,
+        'required_level' => QualificationLevel::Intermediate,
+    ]);
+
+    $resource = Resource::factory()->create([
+        'capacity_value' => 1,
+        'capacity_unit' => 'slots',
+    ]);
+
+    ResourceQualification::factory()->create([
+        'resource_id' => $resource->id,
+        'qualification_id' => $qualification->id,
+        'level' => QualificationLevel::Advanced,
+    ]);
+
+    $lowPriorityTask = Task::factory()->create([
+        'starts_at' => $taskStartsAt,
+        'ends_at' => $taskEndsAt,
+        'priority' => 'low',
+        'status' => 'planned',
+    ]);
+
+    $lowPriorityAssignment = TaskAssignment::factory()->create([
+        'task_id' => $lowPriorityTask->id,
+        'resource_id' => $resource->id,
+        'starts_at' => $taskStartsAt,
+        'ends_at' => $taskEndsAt,
+        'allocation_ratio' => 1,
+        'assignment_source' => AssignmentSource::Manual,
+    ]);
+
+    $result = app(AutoAssignAction::class)->handle(true);
+
+    expect($result['assigned'])->toBe(1);
+    expect($result['skipped'])->toBe(0);
+    expect($result['rescheduled'])->toHaveCount(1);
+
+    $lowPriorityAssignment->refresh();
+
+    expect($lowPriorityAssignment->starts_at?->toDateString())->toBe('2026-04-02');
+    expect($lowPriorityAssignment->ends_at?->toDateString())->toBe('2026-04-03');
+
+    $assignment = TaskAssignment::query()->where('task_id', $highPriorityTask->id)->first();
+    expect($assignment)->not->toBeNull();
+    expect($assignment->resource_id)->toBe($resource->id);
+});
