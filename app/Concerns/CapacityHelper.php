@@ -56,6 +56,44 @@ trait CapacityHelper
     }
 
     /**
+     * Normalize an allocation amount to a usable float value.
+     */
+    private function normalizeAllocation(float|int|string|null $allocation, float $capacity): float
+    {
+        if ($allocation === null) {
+            return $capacity;
+        }
+
+        $value = (float) $allocation;
+
+        return $value < 0 ? 0.0 : $value;
+    }
+
+    /**
+     * Count the number of calendar days touched by a time range.
+     */
+    private function countSpannedDays(DateTimeInterface $startsAt, DateTimeInterface $endsAt): int
+    {
+        $start = $this->toCarbon($startsAt);
+        $end = $this->toCarbon($endsAt);
+
+        if ($end->lte($start)) {
+            return 0;
+        }
+
+        $startDate = $start->startOfDay();
+        $endDate = $end->startOfDay();
+
+        $days = (int) $startDate->diffInDays($endDate);
+
+        if ($end->gt($endDate)) {
+            $days++;
+        }
+
+        return (int) max($days, 1);
+    }
+
+    /**
      * Convert a DateTimeInterface to CarbonImmutable.
      */
     private function toCarbon(DateTimeInterface $dateTime): CarbonImmutable

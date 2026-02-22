@@ -157,7 +157,8 @@ final class UtilizationService
         Collection $assignments,
         Collection $absences,
     ): array {
-        $days = max($bucketStart->diffInDays($bucketEnd), 1);
+        $days = $this->countSpannedDays($bucketStart, $bucketEnd);
+        $days = $days > 0 ? $days : 1;
         $capacity = $capacityPerDay * $days;
 
         $allocated = 0.0;
@@ -177,7 +178,10 @@ final class UtilizationService
                 continue;
             }
 
-            $overlapDays = max($overlapStart->diffInDays($overlapEnd), 1);
+            $overlapDays = $this->countSpannedDays($overlapStart, $overlapEnd);
+            if ($overlapDays <= 0) {
+                continue;
+            }
             $allocated += $this->normalizeRatio($assignment->allocation_ratio) * $overlapDays;
         }
 
@@ -191,7 +195,13 @@ final class UtilizationService
                 continue;
             }
 
-            $absentDays += max($overlapStart->diffInDays($overlapEnd), 1);
+            $overlapDays = $this->countSpannedDays($overlapStart, $overlapEnd);
+
+            if ($overlapDays <= 0) {
+                continue;
+            }
+
+            $absentDays += $overlapDays;
         }
 
         $absentDays = min($absentDays, $days);
