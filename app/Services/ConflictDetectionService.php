@@ -35,8 +35,8 @@ final class ConflictDetectionService
         $overlappingAssignments = $this->overlappingAssignments($resource, $windowStartsAt, $windowEndsAt, $excludeAssignmentId);
 
         $capacity = $this->resolveCapacity($resource);
-        $requestedAllocation = $this->normalizeRatio($allocationRatio, $capacity);
-        $existingAllocation = $overlappingAssignments->sum(fn (TaskAssignment $assignment): float => $this->normalizeRatio($assignment->allocation_ratio, $capacity));
+        $requestedAllocation = $this->normalizeAllocation($allocationRatio, $capacity);
+        $existingAllocation = $overlappingAssignments->sum(fn (TaskAssignment $assignment): float => $this->normalizeAllocation($assignment->allocation_ratio, $capacity));
 
         $totalAllocation = $requestedAllocation + $existingAllocation;
 
@@ -104,7 +104,7 @@ final class ConflictDetectionService
                 $assignmentStartsAt = $this->toCarbon($assignmentStartsAt);
                 $assignmentEndsAt = $this->toCarbon($assignmentEndsAt);
 
-                return $this->overlaps($startsAt, $endsAt, $assignmentStartsAt, $assignmentEndsAt);
+                return $this->overlapsDailyWindow($startsAt, $endsAt, $assignmentStartsAt, $assignmentEndsAt);
             })
             ->values();
     }
@@ -116,5 +116,74 @@ final class ConflictDetectionService
         CarbonImmutable $otherEndsAt,
     ): bool {
         return $startsAt->lt($otherEndsAt) && $endsAt->gt($otherStartsAt);
+    }
+
+    /**
+     * Treat multi-day assignments as repeating daily time windows.
+     */
+    private function overlapsDailyWindow(
+        CarbonImmutable $startsAt,
+        CarbonImmutable $endsAt,
+        CarbonImmutable $otherStartsAt,
+        CarbonImmutable $otherEndsAt,
+    ): bool {
+        if ($endsAt->lte($startsAt) || $otherEndsAt->lte($otherStartsAt)) {
+            return false;
+        }
+
+        $window = $this->dailyWindowDates($startsAt, $endsAt);
+        $otherWindow = $this->dailyWindowDates($otherStartsAt, $otherEndsAt);
+
+        if ($window === null || $otherWindow === null) {
+            return false;
+        }
+
+        [$windowStart, $windowEnd] = $window;
+        [$otherStart, $otherEnd] = $otherWindow;
+
+        if ($windowEnd->lt($otherStart) || $otherEnd->lt($windowStart)) {
+            return false;
+        }
+
+        $startMinutes = $this->minutesFromStartOfDay($startsAt);
+        $endMinutes = $this->minutesFromStartOfDay($endsAt);
+        $otherStartMinutes = $this->minutesFromStartOfDay($otherStartsAt);
+        $otherEndMinutes = $this->minutesFromStartOfDay($otherEndsAt);
+
+        if ($endMinutes <= $startMinutes || $otherEndMinutes <= $otherStartMinutes) {
+            return $this->overlaps($startsAt, $endsAt, $otherStartsAt, $otherEndsAt);
+        }
+
+        return $startMinutes < $otherEndMinutes && $endMinutes > $otherStartMinutes;
+    }
+
+    /**
+     * @return array{CarbonImmutable, CarbonImmutable}|null
+     */
+    private function dailyWindowDates(
+        CarbonImmutable $startsAt,
+        CarbonImmutable $endsAt,
+    ): ?array {
+        if ($endsAt->lte($startsAt)) {
+            return null;
+        }
+
+        $startDate = $startsAt->startOfDay();
+        $endDate = $endsAt->startOfDay();
+
+        if ($endsAt->equalTo($endDate)) {
+            $endDate = $endDate->subDay();
+        }
+
+        if ($endDate->lt($startDate)) {
+            return null;
+        }
+
+        return [$startDate, $endDate];
+    }
+
+    private function minutesFromStartOfDay(CarbonImmutable $dateTime): int
+    {
+        return ((int) $dateTime->format('H')) * 60 + (int) $dateTime->format('i');
     }
 }

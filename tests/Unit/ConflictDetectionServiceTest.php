@@ -78,3 +78,28 @@ test('conflict detection reports overload when a single allocation exceeds capac
     expect($overloaded['metrics'])->toHaveKeys(['allocation', 'capacity', 'capacity_unit']);
     expect($overloaded['metrics']['allocation'])->toBeGreaterThan($overloaded['metrics']['capacity']);
 });
+
+test('conflict detection ignores assignments outside the daily time window', function (): void {
+    $resource = Resource::factory()->create([
+        'capacity_value' => 8,
+        'capacity_unit' => 'hours_per_day',
+    ]);
+
+    assert($resource instanceof Resource);
+
+    TaskAssignment::factory()->create([
+        'resource_id' => $resource->id,
+        'starts_at' => CarbonImmutable::parse('2026-02-12 18:00:00'),
+        'ends_at' => CarbonImmutable::parse('2026-02-12 20:00:00'),
+        'allocation_ratio' => 2,
+    ]);
+
+    $report = app(ConflictDetectionService::class)->detect(
+        resource: $resource,
+        startsAt: CarbonImmutable::parse('2026-02-12 08:00:00'),
+        endsAt: CarbonImmutable::parse('2026-02-12 16:00:00'),
+        allocationRatio: 8,
+    );
+
+    expect($report->hasConflicts())->toBeFalse();
+});
