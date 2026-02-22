@@ -62,7 +62,7 @@ class StoreTaskAssignmentRequest extends FormRequest
             'resource.user.role.name' => ['required_with:resource.user.role', 'string', 'max:255'],
             'resource.user.role.description' => ['nullable', 'string'],
             'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             'allocation_ratio' => ['nullable', 'numeric', 'min:0'],
             'assignment_source' => ['required', Rule::enum(AssignmentSource::class)],
             'assignee_status' => ['nullable', Rule::enum(AssigneeStatus::class)],

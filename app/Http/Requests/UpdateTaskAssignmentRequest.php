@@ -68,7 +68,7 @@ class UpdateTaskAssignmentRequest extends FormRequest
             'resource.user.role.name' => ['required_with:resource.user.role', 'string', 'max:255'],
             'resource.user.role.description' => ['nullable', 'string'],
             'starts_at' => ['sometimes', 'nullable', 'date'],
-            'ends_at' => ['sometimes', 'nullable', 'date'],
+            'ends_at' => ['sometimes', 'nullable', 'date', 'after_or_equal:starts_at'],
             'allocation_ratio' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'assignment_source' => ['sometimes', Rule::enum(AssignmentSource::class)],
             'assignee_status' => ['sometimes', 'nullable', Rule::enum(AssigneeStatus::class)],
